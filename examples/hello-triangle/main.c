@@ -8,12 +8,12 @@ WGPUAdapter adapter;
 WGPUDevice device;
 WGPUQueue queue;
 
-void device_callback(WGPURequestDeviceStatus status, WGPUDevice created_device, char const * message, void* userdata1, void* userdata2)
+void device_callback(WGPURequestDeviceStatus status, WGPUDevice created_device, WGPUStringView message, void* userdata1, void* userdata2)
 {
     device = created_device;
 }
 
-void adapter_callback(WGPURequestAdapterStatus status, WGPUAdapter created_adapter, char const * message, void* userdata1, void* userdata2)
+void adapter_callback(WGPURequestAdapterStatus status, WGPUAdapter created_adapter, WGPUStringView message, void* userdata1, void* userdata2)
 {
     adapter = created_adapter;
 }

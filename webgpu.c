@@ -64,23 +64,23 @@ WGPUInstance wgpuCreateInstance(WGPUInstanceDescriptor const* descriptor)
     return instance;
 }
 
-// void wgpuGetInstanceFeatures(WGPUInstanceFeatures* features)
+// WGPUStatus wgpuGetInstanceCapabilities(WGPUInstanceCapabilities* capabilities)
 // {
 // }
 
-// WGPUProc wgpuGetProcAddress(char const* procName)
+// WGPUProc wgpuGetProcAddress(WGPUStringView procName)
 // {
 // }
 
-// WGPUStatus wgpuAdapterGetFeatures(WGPUAdapter adapter, WGPUSupportedFeatures* features)
+// void wgpuAdapterGetFeatures(WGPUAdapter adapter, WGPUSupportedFeatures* features)
 // {
 // }
 
-// void wgpuAdapterGetInfo(WGPUAdapter adapter, WGPUAdapterInfo* info)
+// WGPUStatus wgpuAdapterGetInfo(WGPUAdapter adapter, WGPUAdapterInfo* info)
 // {
 // }
 
-// WGPUBool wgpuAdapterGetLimits(WGPUAdapter adapter, WGPUSupportedLimits* limits)
+// WGPUStatus wgpuAdapterGetLimits(WGPUAdapter adapter, WGPULimits* limits)
 // {
 // }
 
@@ -96,27 +96,27 @@ WGPUFuture wgpuAdapterRequestDevice(WGPUAdapter adapter, WGPUDeviceDescriptor co
 
     if (descriptor->requiredLimits)
     {
-        WGPULimits limits = descriptor->requiredLimits->limits;
+        WGPULimits const* limits = descriptor->requiredLimits;
 
         descriptor_impl.required_limits.is_some = true;
         descriptor_impl.required_limits.val = wasi_webgpu_webgpu_constructor_record_option_gpu_size64();
         wasi_webgpu_webgpu_borrow_record_option_gpu_size64_t limits_ref =
             wasi_webgpu_webgpu_borrow_record_option_gpu_size64(descriptor_impl.required_limits.val);
 
-        if (limits.maxBindGroups)
+        if (limits->maxBindGroups)
         {
             imports_string_t str = {};
             str.ptr = (uint8_t*)"maxBindGroups";
             str.len = strlen((char*)str.ptr);
-            uint64_t maxBindGroups = limits.maxBindGroups;
+            uint64_t maxBindGroups = limits->maxBindGroups;
             wasi_webgpu_webgpu_method_record_option_gpu_size64_add(limits_ref, &str, &maxBindGroups);
         }
-        if (limits.maxBindGroupsPlusVertexBuffers)
+        if (limits->maxBindGroupsPlusVertexBuffers)
         {
             imports_string_t str = {};
             str.ptr = (uint8_t*)"maxBindGroupsPlusVertexBuffers";
             str.len = strlen((char*)str.ptr);
-            uint64_t maxBindGroupsPlusVertexBuffers = limits.maxBindGroupsPlusVertexBuffers;
+            uint64_t maxBindGroupsPlusVertexBuffers = limits->maxBindGroupsPlusVertexBuffers;
             wasi_webgpu_webgpu_method_record_option_gpu_size64_add(limits_ref, &str, &maxBindGroupsPlusVertexBuffers);
         }
         // ...
@@ -138,7 +138,7 @@ WGPUFuture wgpuAdapterRequestDevice(WGPUAdapter adapter, WGPUDeviceDescriptor co
     device->device = dev;
 
     WGPURequestDeviceCallback callback = callbackInfo.callback;
-    callback(WGPURequestDeviceStatus_Success, device, NULL, callbackInfo.userdata1, callbackInfo.userdata2);
+    callback(WGPURequestDeviceStatus_Success, device, WGPU_STRING_VIEW_INIT, callbackInfo.userdata1, callbackInfo.userdata2);
     return (WGPUFuture) { .id = -1 };
 }
 
@@ -160,7 +160,7 @@ void wgpuAdapterRelease(WGPUAdapter adapter)
 // {
 // }
 
-// void wgpuBindGroupSetLabel(WGPUBindGroup bindGroup, char const* label)
+// void wgpuBindGroupSetLabel(WGPUBindGroup bindGroup, WGPUStringView label)
 // {
 // }
 
@@ -172,7 +172,7 @@ void wgpuAdapterRelease(WGPUAdapter adapter)
 // {
 // }
 
-// void wgpuBindGroupLayoutSetLabel(WGPUBindGroupLayout bindGroupLayout, char const* label)
+// void wgpuBindGroupLayoutSetLabel(WGPUBindGroupLayout bindGroupLayout, WGPUStringView label)
 // {
 // }
 
@@ -213,11 +213,19 @@ void wgpuAdapterRelease(WGPUAdapter adapter)
 // {
 // }
 
-// void wgpuBufferSetLabel(WGPUBuffer buffer, char const* label)
+// WGPUStatus wgpuBufferReadMappedRange(WGPUBuffer buffer, size_t offset, void* data, size_t size)
+// {
+// }
+
+// void wgpuBufferSetLabel(WGPUBuffer buffer, WGPUStringView label)
 // {
 // }
 
 // void wgpuBufferUnmap(WGPUBuffer buffer)
+// {
+// }
+
+// WGPUStatus wgpuBufferWriteMappedRange(WGPUBuffer buffer, size_t offset, void const* data, size_t size)
 // {
 // }
 
@@ -229,7 +237,7 @@ void wgpuAdapterRelease(WGPUAdapter adapter)
 // {
 // }
 
-// void wgpuCommandBufferSetLabel(WGPUCommandBuffer commandBuffer, char const* label)
+// void wgpuCommandBufferSetLabel(WGPUCommandBuffer commandBuffer, WGPUStringView label)
 // {
 // }
 
@@ -260,18 +268,18 @@ void wgpuAdapterRelease(WGPUAdapter adapter)
 // {
 // }
 
-// void wgpuCommandEncoderCopyBufferToTexture(WGPUCommandEncoder commandEncoder, WGPUImageCopyBuffer const* source,
-//     WGPUImageCopyTexture const* destination, WGPUExtent3D const* copySize)
+// void wgpuCommandEncoderCopyBufferToTexture(WGPUCommandEncoder commandEncoder, WGPUTexelCopyBufferInfo const* source,
+//     WGPUTexelCopyTextureInfo const* destination, WGPUExtent3D const* copySize)
 // {
 // }
 
-// void wgpuCommandEncoderCopyTextureToBuffer(WGPUCommandEncoder commandEncoder, WGPUImageCopyTexture const* source,
-//     WGPUImageCopyBuffer const* destination, WGPUExtent3D const* copySize)
+// void wgpuCommandEncoderCopyTextureToBuffer(WGPUCommandEncoder commandEncoder, WGPUTexelCopyTextureInfo const* source,
+//     WGPUTexelCopyBufferInfo const* destination, WGPUExtent3D const* copySize)
 // {
 // }
 
-// void wgpuCommandEncoderCopyTextureToTexture(WGPUCommandEncoder commandEncoder, WGPUImageCopyTexture const* source,
-//     WGPUImageCopyTexture const* destination, WGPUExtent3D const* copySize)
+// void wgpuCommandEncoderCopyTextureToTexture(WGPUCommandEncoder commandEncoder, WGPUTexelCopyTextureInfo const* source,
+//     WGPUTexelCopyTextureInfo const* destination, WGPUExtent3D const* copySize)
 // {
 // }
 
@@ -280,7 +288,7 @@ void wgpuAdapterRelease(WGPUAdapter adapter)
 // {
 // }
 
-// void wgpuCommandEncoderInsertDebugMarker(WGPUCommandEncoder commandEncoder, char const* markerLabel)
+// void wgpuCommandEncoderInsertDebugMarker(WGPUCommandEncoder commandEncoder, WGPUStringView markerLabel)
 // {
 // }
 
@@ -288,7 +296,7 @@ void wgpuAdapterRelease(WGPUAdapter adapter)
 // {
 // }
 
-// void wgpuCommandEncoderPushDebugGroup(WGPUCommandEncoder commandEncoder, char const* groupLabel)
+// void wgpuCommandEncoderPushDebugGroup(WGPUCommandEncoder commandEncoder, WGPUStringView groupLabel)
 // {
 // }
 
@@ -297,7 +305,7 @@ void wgpuAdapterRelease(WGPUAdapter adapter)
 // {
 // }
 
-// void wgpuCommandEncoderSetLabel(WGPUCommandEncoder commandEncoder, char const* label)
+// void wgpuCommandEncoderSetLabel(WGPUCommandEncoder commandEncoder, WGPUStringView label)
 // {
 // }
 
@@ -327,7 +335,7 @@ void wgpuAdapterRelease(WGPUAdapter adapter)
 // {
 // }
 
-// void wgpuComputePassEncoderInsertDebugMarker(WGPUComputePassEncoder computePassEncoder, char const* markerLabel)
+// void wgpuComputePassEncoderInsertDebugMarker(WGPUComputePassEncoder computePassEncoder, WGPUStringView markerLabel)
 // {
 // }
 
@@ -335,7 +343,7 @@ void wgpuAdapterRelease(WGPUAdapter adapter)
 // {
 // }
 
-// void wgpuComputePassEncoderPushDebugGroup(WGPUComputePassEncoder computePassEncoder, char const* groupLabel)
+// void wgpuComputePassEncoderPushDebugGroup(WGPUComputePassEncoder computePassEncoder, WGPUStringView groupLabel)
 // {
 // }
 
@@ -344,7 +352,7 @@ void wgpuAdapterRelease(WGPUAdapter adapter)
 // {
 // }
 
-// void wgpuComputePassEncoderSetLabel(WGPUComputePassEncoder computePassEncoder, char const* label)
+// void wgpuComputePassEncoderSetLabel(WGPUComputePassEncoder computePassEncoder, WGPUStringView label)
 // {
 // }
 
@@ -364,7 +372,7 @@ void wgpuAdapterRelease(WGPUAdapter adapter)
 // {
 // }
 
-// void wgpuComputePipelineSetLabel(WGPUComputePipeline computePipeline, char const* label)
+// void wgpuComputePipelineSetLabel(WGPUComputePipeline computePipeline, WGPUStringView label)
 // {
 // }
 
@@ -439,11 +447,19 @@ void wgpuAdapterRelease(WGPUAdapter adapter)
 // {
 // }
 
-// WGPUStatus wgpuDeviceGetFeatures(WGPUDevice device, WGPUSupportedFeatures* features)
+// WGPUStatus wgpuDeviceGetAdapterInfo(WGPUDevice device, WGPUAdapterInfo* adapterInfo)
 // {
 // }
 
-// WGPUBool wgpuDeviceGetLimits(WGPUDevice device, WGPUSupportedLimits* limits)
+// void wgpuDeviceGetFeatures(WGPUDevice device, WGPUSupportedFeatures* features)
+// {
+// }
+
+// WGPUStatus wgpuDeviceGetLimits(WGPUDevice device, WGPULimits* limits)
+// {
+// }
+
+// WGPUFuture wgpuDeviceGetLostFuture(WGPUDevice device)
 // {
 // }
 
@@ -463,7 +479,7 @@ void wgpuAdapterRelease(WGPUAdapter adapter)
 // {
 // }
 
-// void wgpuDeviceSetLabel(WGPUDevice device, char const* label)
+// void wgpuDeviceSetLabel(WGPUDevice device, WGPUStringView label)
 // {
 // }
 
@@ -485,7 +501,11 @@ void wgpuDeviceRelease(WGPUDevice device)
 // {
 // }
 
-// WGPUBool wgpuInstanceHasWGSLLanguageFeature(WGPUInstance instance, WGPUWGSLFeatureName feature)
+// WGPUStatus wgpuInstanceGetWGSLLanguageFeatures(WGPUInstance instance, WGPUSupportedWGSLLanguageFeatures* features)
+// {
+// }
+
+// WGPUBool wgpuInstanceHasWGSLLanguageFeature(WGPUInstance instance, WGPUWGSLLanguageFeatureName feature)
 // {
 // }
 
@@ -509,7 +529,7 @@ WGPUFuture wgpuInstanceRequestAdapter(WGPUInstance instance, WGPURequestAdapterO
     adapter->refCount = 1;
     adapter->adapter = wasi_adapter;
 
-    callbackInfo.callback(WGPURequestAdapterStatus_Success, adapter, NULL, NULL, NULL);
+    callbackInfo.callback(WGPURequestAdapterStatus_Success, adapter, WGPU_STRING_VIEW_INIT, NULL, NULL);
     return (WGPUFuture) { .id = -1 };
 }
 
@@ -532,7 +552,7 @@ void wgpuInstanceRelease(WGPUInstance instance)
     }
 }
 
-// void wgpuPipelineLayoutSetLabel(WGPUPipelineLayout pipelineLayout, char const* label)
+// void wgpuPipelineLayoutSetLabel(WGPUPipelineLayout pipelineLayout, WGPUStringView label)
 // {
 // }
 
@@ -556,7 +576,7 @@ void wgpuInstanceRelease(WGPUInstance instance)
 // {
 // }
 
-// void wgpuQuerySetSetLabel(WGPUQuerySet querySet, char const* label)
+// void wgpuQuerySetSetLabel(WGPUQuerySet querySet, WGPUStringView label)
 // {
 // }
 
@@ -572,7 +592,7 @@ void wgpuInstanceRelease(WGPUInstance instance)
 // {
 // }
 
-// void wgpuQueueSetLabel(WGPUQueue queue, char const* label)
+// void wgpuQueueSetLabel(WGPUQueue queue, WGPUStringView label)
 // {
 // }
 
@@ -584,8 +604,8 @@ void wgpuInstanceRelease(WGPUInstance instance)
 // {
 // }
 
-// void wgpuQueueWriteTexture(WGPUQueue queue, WGPUImageCopyTexture const* destination, void const* data, size_t dataSize,
-//     WGPUTextureDataLayout const* dataLayout, WGPUExtent3D const* writeSize)
+// void wgpuQueueWriteTexture(WGPUQueue queue, WGPUTexelCopyTextureInfo const* destination, void const* data, size_t dataSize,
+//     WGPUTexelCopyBufferLayout const* dataLayout, WGPUExtent3D const* writeSize)
 // {
 // }
 
@@ -597,7 +617,7 @@ void wgpuInstanceRelease(WGPUInstance instance)
 // {
 // }
 
-// void wgpuRenderBundleSetLabel(WGPURenderBundle renderBundle, char const* label)
+// void wgpuRenderBundleSetLabel(WGPURenderBundle renderBundle, WGPUStringView label)
 // {
 // }
 
@@ -634,7 +654,7 @@ void wgpuInstanceRelease(WGPUInstance instance)
 // {
 // }
 
-// void wgpuRenderBundleEncoderInsertDebugMarker(WGPURenderBundleEncoder renderBundleEncoder, char const* markerLabel)
+// void wgpuRenderBundleEncoderInsertDebugMarker(WGPURenderBundleEncoder renderBundleEncoder, WGPUStringView markerLabel)
 // {
 // }
 
@@ -642,7 +662,7 @@ void wgpuInstanceRelease(WGPUInstance instance)
 // {
 // }
 
-// void wgpuRenderBundleEncoderPushDebugGroup(WGPURenderBundleEncoder renderBundleEncoder, char const* groupLabel)
+// void wgpuRenderBundleEncoderPushDebugGroup(WGPURenderBundleEncoder renderBundleEncoder, WGPUStringView groupLabel)
 // {
 // }
 
@@ -656,7 +676,7 @@ void wgpuInstanceRelease(WGPUInstance instance)
 // {
 // }
 
-// void wgpuRenderBundleEncoderSetLabel(WGPURenderBundleEncoder renderBundleEncoder, char const* label)
+// void wgpuRenderBundleEncoderSetLabel(WGPURenderBundleEncoder renderBundleEncoder, WGPUStringView label)
 // {
 // }
 
@@ -714,7 +734,7 @@ void wgpuInstanceRelease(WGPUInstance instance)
 // {
 // }
 
-// void wgpuRenderPassEncoderInsertDebugMarker(WGPURenderPassEncoder renderPassEncoder, char const* markerLabel)
+// void wgpuRenderPassEncoderInsertDebugMarker(WGPURenderPassEncoder renderPassEncoder, WGPUStringView markerLabel)
 // {
 // }
 
@@ -722,7 +742,7 @@ void wgpuInstanceRelease(WGPUInstance instance)
 // {
 // }
 
-// void wgpuRenderPassEncoderPushDebugGroup(WGPURenderPassEncoder renderPassEncoder, char const* groupLabel)
+// void wgpuRenderPassEncoderPushDebugGroup(WGPURenderPassEncoder renderPassEncoder, WGPUStringView groupLabel)
 // {
 // }
 
@@ -740,7 +760,7 @@ void wgpuInstanceRelease(WGPUInstance instance)
 // {
 // }
 
-// void wgpuRenderPassEncoderSetLabel(WGPURenderPassEncoder renderPassEncoder, char const* label)
+// void wgpuRenderPassEncoderSetLabel(WGPURenderPassEncoder renderPassEncoder, WGPUStringView label)
 // {
 // }
 
@@ -779,7 +799,7 @@ void wgpuInstanceRelease(WGPUInstance instance)
 // {
 // }
 
-// void wgpuRenderPipelineSetLabel(WGPURenderPipeline renderPipeline, char const* label)
+// void wgpuRenderPipelineSetLabel(WGPURenderPipeline renderPipeline, WGPUStringView label)
 // {
 // }
 
@@ -791,7 +811,7 @@ void wgpuInstanceRelease(WGPUInstance instance)
 // {
 // }
 
-// void wgpuSamplerSetLabel(WGPUSampler sampler, char const* label)
+// void wgpuSamplerSetLabel(WGPUSampler sampler, WGPUStringView label)
 // {
 // }
 
@@ -808,7 +828,7 @@ void wgpuInstanceRelease(WGPUInstance instance)
 // {
 // }
 
-// void wgpuShaderModuleSetLabel(WGPUShaderModule shaderModule, char const* label)
+// void wgpuShaderModuleSetLabel(WGPUShaderModule shaderModule, WGPUStringView label)
 // {
 // }
 
@@ -824,11 +844,15 @@ void wgpuInstanceRelease(WGPUInstance instance)
 // {
 // }
 
+// void wgpuSupportedWGSLLanguageFeaturesFreeMembers(WGPUSupportedWGSLLanguageFeatures supportedWGSLLanguageFeatures)
+// {
+// }
+
 // void wgpuSurfaceConfigure(WGPUSurface surface, WGPUSurfaceConfiguration const* config)
 // {
 // }
 
-// WGPUBool wgpuSurfaceGetCapabilities(WGPUSurface surface, WGPUAdapter adapter, WGPUSurfaceCapabilities* capabilities)
+// WGPUStatus wgpuSurfaceGetCapabilities(WGPUSurface surface, WGPUAdapter adapter, WGPUSurfaceCapabilities* capabilities)
 // {
 // }
 
@@ -836,11 +860,11 @@ void wgpuInstanceRelease(WGPUInstance instance)
 // {
 // }
 
-// void wgpuSurfacePresent(WGPUSurface surface)
+// WGPUStatus wgpuSurfacePresent(WGPUSurface surface)
 // {
 // }
 
-// void wgpuSurfaceSetLabel(WGPUSurface surface, char const* label)
+// void wgpuSurfaceSetLabel(WGPUSurface surface, WGPUStringView label)
 // {
 // }
 
@@ -900,7 +924,7 @@ void wgpuInstanceRelease(WGPUInstance instance)
 // {
 // }
 
-// void wgpuTextureSetLabel(WGPUTexture texture, char const* label)
+// void wgpuTextureSetLabel(WGPUTexture texture, WGPUStringView label)
 // {
 // }
 
@@ -912,7 +936,7 @@ void wgpuInstanceRelease(WGPUInstance instance)
 // {
 // }
 
-// void wgpuTextureViewSetLabel(WGPUTextureView textureView, char const* label)
+// void wgpuTextureViewSetLabel(WGPUTextureView textureView, WGPUStringView label)
 // {
 // }
 
