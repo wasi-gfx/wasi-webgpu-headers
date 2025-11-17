@@ -120,8 +120,6 @@ WGPUFuture wgpuAdapterRequestDevice(WGPUAdapter adapter, WGPUDeviceDescriptor co
             wasi_webgpu_webgpu_method_record_option_gpu_size64_add(limits_ref, &str, &maxBindGroupsPlusVertexBuffers);
         }
         // ...
-
-        wasi_webgpu_webgpu_record_option_gpu_size64_drop_own(descriptor_impl.required_limits.val);
     }
 
     wasi_webgpu_webgpu_own_gpu_device_t dev;
@@ -132,13 +130,17 @@ WGPUFuture wgpuAdapterRequestDevice(WGPUAdapter adapter, WGPUDeviceDescriptor co
         &dev,
         &err
     );
+    // TODO: Handle error
+
+    wasi_webgpu_webgpu_request_device_error_free(&err);
 
     WGPUDeviceImpl * device = malloc(sizeof(WGPUDeviceImpl));
     device->refCount = 1;
     device->device = dev;
 
-    WGPURequestDeviceCallback callback = callbackInfo.callback;
-    callback(WGPURequestDeviceStatus_Success, device, WGPU_STRING_VIEW_INIT, callbackInfo.userdata1, callbackInfo.userdata2);
+    wasi_webgpu_webgpu_gpu_device_descriptor_free(&descriptor_impl);
+
+    callbackInfo.callback(WGPURequestDeviceStatus_Success, device, WGPU_STRING_VIEW_INIT, callbackInfo.userdata1, callbackInfo.userdata2);
     return (WGPUFuture) { .id = -1 };
 }
 
@@ -152,6 +154,7 @@ void wgpuAdapterRelease(WGPUAdapter adapter)
     adapter->refCount --;
     if(adapter->refCount < 1)
     {
+        wasi_webgpu_webgpu_gpu_adapter_drop_own(adapter->adapter);
         free(adapter);
     }
 }
@@ -493,6 +496,7 @@ void wgpuDeviceRelease(WGPUDevice device)
     device->refCount --;
     if(device->refCount < 1)
     {
+        wasi_webgpu_webgpu_gpu_device_drop_own(device->device);
         free(device);
     }
 }
@@ -529,6 +533,8 @@ WGPUFuture wgpuInstanceRequestAdapter(WGPUInstance instance, WGPURequestAdapterO
     adapter->refCount = 1;
     adapter->adapter = wasi_adapter;
 
+    wasi_webgpu_webgpu_gpu_request_adapter_options_free(&wasi_options);
+
     callbackInfo.callback(WGPURequestAdapterStatus_Success, adapter, WGPU_STRING_VIEW_INIT, NULL, NULL);
     return (WGPUFuture) { .id = -1 };
 }
@@ -548,6 +554,7 @@ void wgpuInstanceRelease(WGPUInstance instance)
     instance->refCount --;
     if(instance->refCount < 1)
     {
+        wasi_webgpu_webgpu_gpu_drop_own(instance->gpu);
         free(instance);
     }
 }
