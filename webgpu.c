@@ -111,19 +111,22 @@ WGPUFuture wgpuAdapterRequestDevice(WGPUAdapter adapter, WGPUDeviceDescriptor co
 
     wasi_webgpu_webgpu_gpu_device_descriptor_t descriptor_wasi = {};
 
-    descriptor_wasi.required_limits = limitsNativeToWasi(descriptor->requiredLimits);
-
-    if (descriptor && descriptor->requiredFeatures)
+    if (descriptor)
     {
-        descriptor_wasi.required_features.is_some = true;
-        descriptor_wasi.required_features.val = (wasi_webgpu_webgpu_list_gpu_feature_name_t){
-            .ptr = malloc(descriptor->requiredFeatureCount * sizeof(wasi_webgpu_webgpu_gpu_feature_name_t)),
-            .len = descriptor->requiredFeatureCount,
-        };
-        
-        for (size_t i = 0; i < descriptor->requiredFeatureCount; i++)
+        descriptor_wasi.required_limits = limitsNativeToWasi(descriptor->requiredLimits);
+
+        if (descriptor->requiredFeatures)
         {
-            descriptor_wasi.required_features.val.ptr[i] = featureNativeToWasi(descriptor->requiredFeatures[i]);
+            descriptor_wasi.required_features.is_some = true;
+            descriptor_wasi.required_features.val = (wasi_webgpu_webgpu_list_gpu_feature_name_t){
+                .ptr = malloc(descriptor->requiredFeatureCount * sizeof(wasi_webgpu_webgpu_gpu_feature_name_t)),
+                .len = descriptor->requiredFeatureCount,
+            };
+            
+            for (size_t i = 0; i < descriptor->requiredFeatureCount; i++)
+            {
+                descriptor_wasi.required_features.val.ptr[i] = featureNativeToWasi(descriptor->requiredFeatures[i]);
+            }
         }
     }
 
@@ -535,10 +538,13 @@ WGPUFuture wgpuInstanceRequestAdapter(WGPUInstance instance, WGPURequestAdapterO
     if(!instance) unreachable();
 
     wasi_webgpu_webgpu_gpu_request_adapter_options_t wasi_options = {};
-    wasi_options.feature_level = featureLevelNativeToWasi(options->featureLevel);
-    wasi_options.power_preference = powerPreferenceNativeToWasi(options->powerPreference);
-    wasi_options.force_fallback_adapter.is_some = true;
-    wasi_options.force_fallback_adapter.val = options->forceFallbackAdapter;
+    if (options)
+    {
+        wasi_options.feature_level = featureLevelNativeToWasi(options->featureLevel);
+        wasi_options.power_preference = powerPreferenceNativeToWasi(options->powerPreference);
+        wasi_options.force_fallback_adapter.is_some = true;
+        wasi_options.force_fallback_adapter.val = options->forceFallbackAdapter;
+    }
     // TODO: set xr_compatible
 
     wasi_webgpu_webgpu_own_gpu_adapter_t wasi_adapter;
