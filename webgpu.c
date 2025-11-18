@@ -107,6 +107,8 @@ WGPUInstance wgpuCreateInstance(WGPUInstanceDescriptor const* descriptor)
 
 WGPUFuture wgpuAdapterRequestDevice(WGPUAdapter adapter, WGPUDeviceDescriptor const* descriptor, WGPURequestDeviceCallbackInfo callbackInfo)
 {
+    if(!adapter) unreachable();
+
     wasi_webgpu_webgpu_gpu_device_descriptor_t descriptor_wasi = {};
 
     descriptor_wasi.required_limits = limitsNativeToWasi(descriptor->requiredLimits);
@@ -152,11 +154,13 @@ WGPUFuture wgpuAdapterRequestDevice(WGPUAdapter adapter, WGPUDeviceDescriptor co
 
 void wgpuAdapterAddRef(WGPUAdapter adapter)
 {
+    if(!adapter) unreachable();
     adapter->refCount ++;
 }
 
 void wgpuAdapterRelease(WGPUAdapter adapter)
 {
+    if(!adapter) unreachable();
     adapter->refCount --;
     if(adapter->refCount < 1)
     {
@@ -494,11 +498,13 @@ void wgpuAdapterRelease(WGPUAdapter adapter)
 
 void wgpuDeviceAddRef(WGPUDevice device)
 {
+    if(!device) unreachable();
     device->refCount ++;
 }
 
 void wgpuDeviceRelease(WGPUDevice device)
 {
+    if(!device) unreachable();
     device->refCount --;
     if(device->refCount < 1)
     {
@@ -526,6 +532,8 @@ void wgpuDeviceRelease(WGPUDevice device)
 WGPUFuture wgpuInstanceRequestAdapter(WGPUInstance instance, WGPURequestAdapterOptions const* options,
     WGPURequestAdapterCallbackInfo callbackInfo)
 {
+    if(!instance) unreachable();
+
     wasi_webgpu_webgpu_gpu_request_adapter_options_t wasi_options = {};
     wasi_options.feature_level = featureLevelNativeToWasi(options->featureLevel);
     wasi_options.power_preference = powerPreferenceNativeToWasi(options->powerPreference);
@@ -562,11 +570,13 @@ WGPUFuture wgpuInstanceRequestAdapter(WGPUInstance instance, WGPURequestAdapterO
 
 void wgpuInstanceAddRef(WGPUInstance instance)
 {
+    if(!instance) unreachable();
     instance->refCount ++;
 }
 
 void wgpuInstanceRelease(WGPUInstance instance)
 {
+    if(!instance) unreachable();
     instance->refCount --;
     if(instance->refCount < 1)
     {
