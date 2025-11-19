@@ -367,10 +367,19 @@ void wgpuCommandBufferRelease(WGPUCommandBuffer commandBuffer)
 // {
 // }
 
-// void wgpuCommandEncoderCopyBufferToBuffer(WGPUCommandEncoder commandEncoder, WGPUBuffer source, uint64_t sourceOffset,
-//     WGPUBuffer destination, uint64_t destinationOffset, uint64_t size)
-// {
-// }
+void wgpuCommandEncoderCopyBufferToBuffer(WGPUCommandEncoder commandEncoder, WGPUBuffer source, uint64_t sourceOffset,
+    WGPUBuffer destination, uint64_t destinationOffset, uint64_t size)
+{
+    if(!commandEncoder || !source || !destination) unreachable();
+    wasi_webgpu_webgpu_method_gpu_command_encoder_copy_buffer_to_buffer(
+        wasi_webgpu_webgpu_borrow_gpu_command_encoder(commandEncoder->command_encoder),
+        wasi_webgpu_webgpu_borrow_gpu_buffer(source->buffer),
+        sourceOffset,
+        wasi_webgpu_webgpu_borrow_gpu_buffer(destination->buffer),
+        destinationOffset,
+        size
+    );
+}
 
 // void wgpuCommandEncoderCopyBufferToTexture(WGPUCommandEncoder commandEncoder, WGPUTexelCopyBufferInfo const* source,
 //     WGPUTexelCopyTextureInfo const* destination, WGPUExtent3D const* copySize)
