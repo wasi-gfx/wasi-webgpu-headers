@@ -9,6 +9,9 @@ tidy:
 analyze:
 	${WASI_SDK_PATH}/bin/clang --analyze -Xanalyzer -analyzer-output=text -I${WASI_SDK_PATH}/share/wasi-sysroot/include webgpu.c
 
+format:
+	${WASI_SDK_PATH}/bin/clang-format -i webgpu.c
+
 build-library:
 	$(clang) webgpu.c imports_component_type.o imports.c -o webgpu.wasm -mexec-model=reactor
 
