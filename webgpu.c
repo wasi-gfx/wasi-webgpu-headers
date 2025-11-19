@@ -417,13 +417,6 @@ void wgpuCommandEncoderRelease(WGPUCommandEncoder commandEncoder)
         free(commandEncoder);
     }
 }
-// void wgpuCommandEncoderAddRef(WGPUCommandEncoder commandEncoder)
-// {
-// }
-
-// void wgpuCommandEncoderRelease(WGPUCommandEncoder commandEncoder)
-// {
-// }
 
 // void wgpuComputePassEncoderDispatchWorkgroups(WGPUComputePassEncoder computePassEncoder, uint32_t workgroupCountX,
 //     uint32_t workgroupCountY, uint32_t workgroupCountZ)
