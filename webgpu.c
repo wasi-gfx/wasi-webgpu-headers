@@ -108,6 +108,8 @@ wasi_webgpu_webgpu_option_gpu_power_preference_t powerPreferenceNativeToWasi(WGP
 wasi_webgpu_webgpu_gpu_feature_name_t featureNativeToWasi(WGPUFeatureName const feature);
 WGPUFeatureName featureWasiToNative(wasi_webgpu_webgpu_gpu_feature_name_t const feature);
 wasi_webgpu_webgpu_option_own_record_option_gpu_size64_t limitsNativeToWasi(WGPULimits const* limits_native);
+wasi_webgpu_webgpu_gpu_buffer_map_state_t bufferMapStateNativeToWasi(WGPUBufferMapState const bufferMapState);
+WGPUBufferMapState bufferMapStateWasiToNative(wasi_webgpu_webgpu_gpu_buffer_map_state_t const buffer_map_state);
 
 WGPUInstance wgpuCreateInstance(WGPUInstanceDescriptor const* descriptor)
 {
@@ -265,9 +267,13 @@ void wgpuBindGroupLayoutRelease(WGPUBindGroupLayout bindGroupLayout)
 // {
 // }
 
-// WGPUBufferMapState wgpuBufferGetMapState(WGPUBuffer buffer)
-// {
-// }
+WGPUBufferMapState wgpuBufferGetMapState(WGPUBuffer buffer)
+{
+    if(!buffer) unreachable();
+    wasi_webgpu_webgpu_borrow_gpu_buffer_t buffer_borrowed = wasi_webgpu_webgpu_borrow_gpu_buffer(buffer->buffer);
+    wasi_webgpu_webgpu_gpu_buffer_map_state_t state_wasi = wasi_webgpu_webgpu_method_gpu_buffer_map_state(buffer_borrowed);
+    return bufferMapStateWasiToNative(state_wasi);
+}
 
 // void* wgpuBufferGetMappedRange(WGPUBuffer buffer, size_t offset, size_t size)
 // {
@@ -1197,6 +1203,34 @@ void wgpuTextureViewRelease(WGPUTextureView textureView)
     {
         wasi_webgpu_webgpu_gpu_texture_view_drop_own(textureView->texture_view);
         free(textureView);
+    }
+}
+
+wasi_webgpu_webgpu_gpu_buffer_map_state_t bufferMapStateNativeToWasi(WGPUBufferMapState const bufferMapState)
+{
+    switch (bufferMapState) {
+        case WGPUBufferMapState_Unmapped:
+            return WASI_WEBGPU_WEBGPU_GPU_BUFFER_MAP_STATE_UNMAPPED;
+        case WGPUBufferMapState_Pending:
+            return WASI_WEBGPU_WEBGPU_GPU_BUFFER_MAP_STATE_PENDING;
+        case WGPUBufferMapState_Mapped:
+            return WASI_WEBGPU_WEBGPU_GPU_BUFFER_MAP_STATE_MAPPED;
+        default:
+            unreachable();
+    }
+}
+
+WGPUBufferMapState bufferMapStateWasiToNative(wasi_webgpu_webgpu_gpu_buffer_map_state_t const buffer_map_state)
+{
+    switch (buffer_map_state) {
+        case WASI_WEBGPU_WEBGPU_GPU_BUFFER_MAP_STATE_UNMAPPED:
+            return WGPUBufferMapState_Unmapped;
+        case WASI_WEBGPU_WEBGPU_GPU_BUFFER_MAP_STATE_PENDING:
+            return WGPUBufferMapState_Pending;
+        case WASI_WEBGPU_WEBGPU_GPU_BUFFER_MAP_STATE_MAPPED:
+            return WGPUBufferMapState_Mapped;
+        default:
+            unreachable();
     }
 }
 
