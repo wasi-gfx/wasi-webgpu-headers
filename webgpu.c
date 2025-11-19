@@ -201,7 +201,8 @@ void wgpuAdapterRelease(WGPUAdapter adapter)
 {
     if(!adapter) unreachable();
     adapter->refCount --;
-    if(adapter->refCount < 1)
+    if(adapter->refCount < 0) unreachable();
+    if(adapter->refCount == 0)
     {
         wasi_webgpu_webgpu_gpu_adapter_drop_own(adapter->adapter);
         free(adapter);
@@ -226,7 +227,8 @@ void wgpuBindGroupRelease(WGPUBindGroup bindGroup)
 {
     if(!bindGroup) unreachable();
     bindGroup->refCount --;
-    if(bindGroup->refCount < 1)
+    if(bindGroup->refCount < 0) unreachable();
+    if(bindGroup->refCount == 0)
     {
         wasi_webgpu_webgpu_gpu_bind_group_drop_own(bindGroup->bind_group);
         free(bindGroup);
@@ -247,7 +249,8 @@ void wgpuBindGroupLayoutRelease(WGPUBindGroupLayout bindGroupLayout)
 {
     if(!bindGroupLayout) unreachable();
     bindGroupLayout->refCount --;
-    if(bindGroupLayout->refCount < 1)
+    if(bindGroupLayout->refCount < 0) unreachable();
+    if(bindGroupLayout->refCount == 0)
     {
         wasi_webgpu_webgpu_gpu_bind_group_layout_drop_own(bindGroupLayout->bind_group_layout);
         free(bindGroupLayout);
@@ -309,7 +312,8 @@ void wgpuBufferRelease(WGPUBuffer buffer)
 {
     if(!buffer) unreachable();
     buffer->refCount --;
-    if(buffer->refCount < 1)
+    if(buffer->refCount < 0) unreachable();
+    if(buffer->refCount == 0)
     {
         wasi_webgpu_webgpu_gpu_buffer_drop_own(buffer->buffer);
         free(buffer);
@@ -330,7 +334,8 @@ void wgpuCommandBufferRelease(WGPUCommandBuffer commandBuffer)
 {
     if(!commandBuffer) unreachable();
     commandBuffer->refCount --;
-    if(commandBuffer->refCount < 1)
+    if(commandBuffer->refCount < 0) unreachable();
+    if(commandBuffer->refCount == 0)
     {
         wasi_webgpu_webgpu_gpu_command_buffer_drop_own(commandBuffer->command_buffer);
         free(commandBuffer);
@@ -411,7 +416,8 @@ void wgpuCommandEncoderRelease(WGPUCommandEncoder commandEncoder)
 {
     if(!commandEncoder) unreachable();
     commandEncoder->refCount --;
-    if(commandEncoder->refCount < 1)
+    if(commandEncoder->refCount < 0) unreachable();
+    if(commandEncoder->refCount == 0)
     {
         wasi_webgpu_webgpu_gpu_command_encoder_drop_own(commandEncoder->command_encoder);
         free(commandEncoder);
@@ -464,7 +470,8 @@ void wgpuComputePassEncoderRelease(WGPUComputePassEncoder computePassEncoder)
 {
     if(!computePassEncoder) unreachable();
     computePassEncoder->refCount --;
-    if(computePassEncoder->refCount < 1)
+    if(computePassEncoder->refCount < 0) unreachable();
+    if(computePassEncoder->refCount == 0)
     {
         wasi_webgpu_webgpu_gpu_compute_pass_encoder_drop_own(computePassEncoder->compute_pass_encoder);
         free(computePassEncoder);
@@ -486,7 +493,8 @@ void wgpuComputePipelineRelease(WGPUComputePipeline computePipeline)
 {
     if(!computePipeline) unreachable();
     computePipeline->refCount --;
-    if(computePipeline->refCount < 1)
+    if(computePipeline->refCount < 0) unreachable();
+    if(computePipeline->refCount == 0)
     {
         wasi_webgpu_webgpu_gpu_compute_pipeline_drop_own(computePipeline->compute_pipeline);
         free(computePipeline);
@@ -602,7 +610,8 @@ void wgpuDeviceRelease(WGPUDevice device)
 {
     if(!device) unreachable();
     device->refCount --;
-    if(device->refCount < 1)
+    if(device->refCount < 0) unreachable();
+    if(device->refCount == 0)
     {
         wasi_webgpu_webgpu_gpu_device_drop_own(device->device);
         free(device);
@@ -677,7 +686,8 @@ void wgpuInstanceRelease(WGPUInstance instance)
 {
     if(!instance) unreachable();
     instance->refCount --;
-    if(instance->refCount < 1)
+    if(instance->refCount < 0) unreachable();
+    if(instance->refCount == 0)
     {
         wasi_webgpu_webgpu_gpu_drop_own(instance->gpu);
         free(instance);
@@ -698,7 +708,8 @@ void wgpuPipelineLayoutRelease(WGPUPipelineLayout pipelineLayout)
 {
     if(!pipelineLayout) unreachable();
     pipelineLayout->refCount --;
-    if(pipelineLayout->refCount < 1)
+    if(pipelineLayout->refCount < 0) unreachable();
+    if(pipelineLayout->refCount == 0)
     {
         wasi_webgpu_webgpu_gpu_pipeline_layout_drop_own(pipelineLayout->pipeline_layout);
         free(pipelineLayout);
@@ -731,7 +742,8 @@ void wgpuQuerySetRelease(WGPUQuerySet querySet)
 {
     if(!querySet) unreachable();
     querySet->refCount --;
-    if(querySet->refCount < 1)
+    if(querySet->refCount < 0) unreachable();
+    if(querySet->refCount == 0)
     {
         wasi_webgpu_webgpu_gpu_query_set_drop_own(querySet->query_set);
         free(querySet);
@@ -769,7 +781,8 @@ void wgpuQueueRelease(WGPUQueue queue)
 {
     if(!queue) unreachable();
     queue->refCount --;
-    if(queue->refCount < 1)
+    if(queue->refCount < 0) unreachable();
+    if(queue->refCount == 0)
     {
         wasi_webgpu_webgpu_gpu_queue_drop_own(queue->queue);
         free(queue);
@@ -790,7 +803,8 @@ void wgpuRenderBundleRelease(WGPURenderBundle renderBundle)
 {
     if(!renderBundle) unreachable();
     renderBundle->refCount --;
-    if(renderBundle->refCount < 1)
+    if(renderBundle->refCount < 0) unreachable();
+    if(renderBundle->refCount == 0)
     {
         wasi_webgpu_webgpu_gpu_render_bundle_drop_own(renderBundle->render_bundle);
         free(renderBundle);
@@ -867,7 +881,8 @@ void wgpuRenderBundleEncoderRelease(WGPURenderBundleEncoder renderBundleEncoder)
 {
     if(!renderBundleEncoder) unreachable();
     renderBundleEncoder->refCount --;
-    if(renderBundleEncoder->refCount < 1)
+    if(renderBundleEncoder->refCount < 0) unreachable();
+    if(renderBundleEncoder->refCount == 0)
     {
         wasi_webgpu_webgpu_gpu_render_bundle_encoder_drop_own(renderBundleEncoder->render_bundle_encoder);
         free(renderBundleEncoder);
@@ -974,7 +989,8 @@ void wgpuRenderPassEncoderRelease(WGPURenderPassEncoder renderPassEncoder)
 {
     if(!renderPassEncoder) unreachable();
     renderPassEncoder->refCount --;
-    if(renderPassEncoder->refCount < 1)
+    if(renderPassEncoder->refCount < 0) unreachable();
+    if(renderPassEncoder->refCount == 0)
     {
         wasi_webgpu_webgpu_gpu_render_pass_encoder_drop_own(renderPassEncoder->render_pass_encoder);
         free(renderPassEncoder);
@@ -999,7 +1015,8 @@ void wgpuRenderPipelineRelease(WGPURenderPipeline renderPipeline)
 {
     if(!renderPipeline) unreachable();
     renderPipeline->refCount --;
-    if(renderPipeline->refCount < 1)
+    if(renderPipeline->refCount < 0) unreachable();
+    if(renderPipeline->refCount == 0)
     {
         wasi_webgpu_webgpu_gpu_render_pipeline_drop_own(renderPipeline->render_pipeline);
         free(renderPipeline);
@@ -1020,7 +1037,8 @@ void wgpuSamplerRelease(WGPUSampler sampler)
 {
     if(!sampler) unreachable();
     sampler->refCount --;
-    if(sampler->refCount < 1)
+    if(sampler->refCount < 0) unreachable();
+    if(sampler->refCount == 0)
     {
         wasi_webgpu_webgpu_gpu_sampler_drop_own(sampler->sampler);
         free(sampler);
@@ -1046,7 +1064,8 @@ void wgpuShaderModuleRelease(WGPUShaderModule shaderModule)
 {
     if(!shaderModule) unreachable();
     shaderModule->refCount --;
-    if(shaderModule->refCount < 1)
+    if(shaderModule->refCount < 0) unreachable();
+    if(shaderModule->refCount == 0)
     {
         wasi_webgpu_webgpu_gpu_shader_module_drop_own(shaderModule->module);
         free(shaderModule);
@@ -1151,7 +1170,8 @@ void wgpuTextureRelease(WGPUTexture texture)
 {
     if(!texture) unreachable();
     texture->refCount --;
-    if(texture->refCount < 1)
+    if(texture->refCount < 0) unreachable();
+    if(texture->refCount == 0)
     {
         wasi_webgpu_webgpu_gpu_texture_drop_own(texture->texture);
         free(texture);
@@ -1172,7 +1192,8 @@ void wgpuTextureViewRelease(WGPUTextureView textureView)
 {
     if(!textureView) unreachable();
     textureView->refCount --;
-    if(textureView->refCount < 1)
+    if(textureView->refCount < 0) unreachable();
+    if(textureView->refCount == 0)
     {
         wasi_webgpu_webgpu_gpu_texture_view_drop_own(textureView->texture_view);
         free(textureView);
