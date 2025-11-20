@@ -31,6 +31,8 @@ typedef struct WGPUBindGroupLayoutImpl {
 typedef struct WGPUBufferImpl {
     wasi_webgpu_webgpu_own_gpu_buffer_t buffer;
     uint32_t refCount;
+    imports_list_u8_t* mapping;
+    uint64_t offset;
 } WGPUBufferImpl;
 typedef struct WGPUCommandBufferImpl {
     wasi_webgpu_webgpu_own_gpu_command_buffer_t command_buffer;
@@ -266,9 +268,10 @@ void wgpuBindGroupLayoutRelease(WGPUBindGroupLayout bindGroupLayout)
 // {
 // }
 
-// void const* wgpuBufferGetConstMappedRange(WGPUBuffer buffer, size_t offset, size_t size)
-// {
-// }
+void const* wgpuBufferGetConstMappedRange(WGPUBuffer buffer, size_t offset, size_t size)
+{
+    return wgpuBufferGetMappedRange(buffer, offset, size);
+}
 
 WGPUBufferMapState wgpuBufferGetMapState(WGPUBuffer buffer)
 {
@@ -278,9 +281,37 @@ WGPUBufferMapState wgpuBufferGetMapState(WGPUBuffer buffer)
     return bufferMapStateWasiToNative(state_wasi);
 }
 
-// void* wgpuBufferGetMappedRange(WGPUBuffer buffer, size_t offset, size_t size)
-// {
-// }
+void* wgpuBufferGetMappedRange(WGPUBuffer buffer, size_t offset, size_t size)
+{
+    if(!buffer) unreachable();
+
+    wasi_webgpu_webgpu_gpu_size64_t offset_wasi = (wasi_webgpu_webgpu_gpu_size64_t)offset;
+    wasi_webgpu_webgpu_gpu_size64_t size_wasi = (wasi_webgpu_webgpu_gpu_size64_t)size;
+    if (size == WGPU_WHOLE_MAP_SIZE) {
+        size_wasi = wgpuBufferGetSize(buffer) - offset;
+    }
+
+    imports_list_u8_t * mapping = malloc(sizeof(imports_list_u8_t));
+    wasi_webgpu_webgpu_get_mapped_range_error_t err;
+
+    bool success = wasi_webgpu_webgpu_method_gpu_buffer_get_mapped_range_get_with_copy(
+        wasi_webgpu_webgpu_borrow_gpu_buffer(buffer->buffer),
+        &offset_wasi,
+        &size_wasi,
+        mapping,
+        &err
+    );
+
+    if (!success)
+    {
+        wasi_webgpu_webgpu_get_mapped_range_error_free(&err);
+        todo();
+    }
+
+    buffer->mapping = mapping;
+    buffer->offset = offset;
+    return mapping->ptr;
+}
 
 uint64_t wgpuBufferGetSize(WGPUBuffer buffer)
 {
@@ -295,10 +326,42 @@ WGPUBufferUsage wgpuBufferGetUsage(WGPUBuffer buffer)
     return usage;
 }
 
-// WGPUFuture wgpuBufferMapAsync(WGPUBuffer buffer, WGPUMapMode mode, size_t offset, size_t size,
-//     WGPUBufferMapCallbackInfo callbackInfo)
-// {
-// }
+WGPUFuture wgpuBufferMapAsync(WGPUBuffer buffer, WGPUMapMode mode, size_t offset, size_t size,
+    WGPUBufferMapCallbackInfo callbackInfo)
+{
+    if(!buffer) unreachable();
+
+    wasi_webgpu_webgpu_gpu_map_mode_flags_t mode_wasi = (uint32_t)mode;
+    wasi_webgpu_webgpu_gpu_size64_t offset_wasi = (wasi_webgpu_webgpu_gpu_size64_t)offset;
+    wasi_webgpu_webgpu_gpu_size64_t size_wasi = (wasi_webgpu_webgpu_gpu_size64_t)size;
+    if (size == WGPU_WHOLE_MAP_SIZE) {
+        size_wasi = wgpuBufferGetSize(buffer) - offset;
+    }
+
+    wasi_webgpu_webgpu_map_async_error_t err;
+    bool success = wasi_webgpu_webgpu_method_gpu_buffer_map_async(
+        wasi_webgpu_webgpu_borrow_gpu_buffer(buffer->buffer),
+        mode_wasi,
+        &offset_wasi,
+        &size_wasi,
+        &err
+    );
+
+    if (!success)
+    {
+        wasi_webgpu_webgpu_map_async_error_free(&err);
+        todo();
+    }
+
+    callbackInfo.callback(
+        WGPUMapAsyncStatus_Success,
+        WGPU_STRING_VIEW_INIT,
+        callbackInfo.userdata1,
+        callbackInfo.userdata2
+    );
+
+    return (WGPUFuture) { .id = -1 };
+}
 
 // WGPUStatus wgpuBufferReadMappedRange(WGPUBuffer buffer, size_t offset, void* data, size_t size)
 // {
@@ -308,9 +371,40 @@ WGPUBufferUsage wgpuBufferGetUsage(WGPUBuffer buffer)
 // {
 // }
 
-// void wgpuBufferUnmap(WGPUBuffer buffer)
-// {
-// }
+void wgpuBufferUnmap(WGPUBuffer buffer)
+{
+    if (!buffer) unreachable();
+
+    // since we don't have memory mapping yet, we need to copy the mapped range back to the buffer before unmapping
+    if (buffer->mapping)
+    {
+        wasi_webgpu_webgpu_get_mapped_range_error_t err_set;
+        bool success_set = wasi_webgpu_webgpu_method_gpu_buffer_get_mapped_range_set_with_copy(
+            wasi_webgpu_webgpu_borrow_gpu_buffer(buffer->buffer),
+            buffer->mapping,
+            &buffer->offset,
+            NULL, // copy in the whole mapped range
+            &err_set);
+
+        if (!success_set)
+        {
+            wasi_webgpu_webgpu_get_mapped_range_error_free(&err_set);
+            todo();
+        }
+
+        imports_list_u8_free(buffer->mapping);
+        buffer->mapping = NULL;
+    }
+
+    wasi_webgpu_webgpu_unmap_error_t err_unmap;
+    bool success_unmap = wasi_webgpu_webgpu_method_gpu_buffer_unmap(wasi_webgpu_webgpu_borrow_gpu_buffer(buffer->buffer), &err_unmap);
+
+    if (!success_unmap)
+    {
+        wasi_webgpu_webgpu_unmap_error_free(&err_unmap);
+        todo();
+    }
+}
 
 // WGPUStatus wgpuBufferWriteMappedRange(WGPUBuffer buffer, size_t offset, void const* data, size_t size)
 // {
@@ -329,6 +423,9 @@ void wgpuBufferRelease(WGPUBuffer buffer)
     if(buffer->refCount < 0) unreachable();
     if(buffer->refCount == 0)
     {
+        if (buffer->mapping) {
+            imports_list_u8_free(buffer->mapping);
+        }
         wasi_webgpu_webgpu_gpu_buffer_drop_own(buffer->buffer);
         free(buffer);
     }
@@ -601,6 +698,7 @@ WGPUBuffer wgpuDeviceCreateBuffer(WGPUDevice device, WGPUBufferDescriptor const*
     WGPUBufferImpl* buffer_struct = malloc(sizeof(WGPUBufferImpl));
     buffer_struct->buffer = buffer;
     buffer_struct->refCount = 1;
+    buffer_struct->mapping = NULL;
     return (WGPUBuffer)buffer_struct;
 }
 
