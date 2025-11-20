@@ -604,9 +604,26 @@ WGPUBuffer wgpuDeviceCreateBuffer(WGPUDevice device, WGPUBufferDescriptor const*
     return (WGPUBuffer)buffer_struct;
 }
 
-// WGPUCommandEncoder wgpuDeviceCreateCommandEncoder(WGPUDevice device, WGPUCommandEncoderDescriptor const* descriptor)
-// {
-// }
+WGPUCommandEncoder wgpuDeviceCreateCommandEncoder(WGPUDevice device, WGPUCommandEncoderDescriptor const* descriptor)
+{
+    if(!device) unreachable();
+
+    wasi_webgpu_webgpu_gpu_command_encoder_descriptor_t descriptor_wasi = {};
+    if (descriptor) {
+        descriptor_wasi.label = labelNativeToWasi(&descriptor->label);
+    }
+    wasi_webgpu_webgpu_own_gpu_command_encoder_t command_encoder = wasi_webgpu_webgpu_method_gpu_device_create_command_encoder(
+        wasi_webgpu_webgpu_borrow_gpu_device(device->device),
+        &descriptor_wasi
+    );
+
+    wasi_webgpu_webgpu_gpu_command_encoder_descriptor_free(&descriptor_wasi);
+
+    WGPUCommandEncoderImpl* command_encoder_struct = malloc(sizeof(WGPUCommandEncoderImpl));
+    command_encoder_struct->command_encoder = command_encoder;
+    command_encoder_struct->refCount ++;
+    return command_encoder_struct;
+}
 
 // WGPUComputePipeline wgpuDeviceCreateComputePipeline(WGPUDevice device, WGPUComputePipelineDescriptor const* descriptor)
 // {
