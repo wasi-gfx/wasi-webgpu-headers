@@ -575,9 +575,34 @@ void wgpuComputePipelineRelease(WGPUComputePipeline computePipeline)
 // {
 // }
 
-// WGPUBuffer wgpuDeviceCreateBuffer(WGPUDevice device, WGPUBufferDescriptor const* descriptor)
-// {
-// }
+WGPUBuffer wgpuDeviceCreateBuffer(WGPUDevice device, WGPUBufferDescriptor const* descriptor)
+{
+    if(!device) unreachable();
+
+    wasi_webgpu_webgpu_gpu_buffer_descriptor_t descriptor_wasi = {};
+
+    if (descriptor) {
+        descriptor_wasi.size = descriptor->size;
+        descriptor_wasi.usage = descriptor->usage;
+        descriptor_wasi.label = labelNativeToWasi(&descriptor->label);
+        descriptor_wasi.mapped_at_creation = (imports_option_bool_t) {
+            .is_some = true,
+            .val = descriptor->mappedAtCreation,
+        };
+    }
+
+    wasi_webgpu_webgpu_own_gpu_buffer_t buffer = wasi_webgpu_webgpu_method_gpu_device_create_buffer(
+        wasi_webgpu_webgpu_borrow_gpu_device(device->device),
+        &descriptor_wasi
+    );
+
+    wasi_webgpu_webgpu_gpu_buffer_descriptor_free(&descriptor_wasi);
+
+    WGPUBufferImpl* buffer_struct = malloc(sizeof(WGPUBufferImpl));
+    buffer_struct->buffer = buffer;
+    buffer_struct->refCount = 1;
+    return (WGPUBuffer)buffer_struct;
+}
 
 // WGPUCommandEncoder wgpuDeviceCreateCommandEncoder(WGPUDevice device, WGPUCommandEncoderDescriptor const* descriptor)
 // {
