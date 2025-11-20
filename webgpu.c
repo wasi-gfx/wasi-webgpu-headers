@@ -1214,11 +1214,11 @@ imports_option_string_t featureLevelNativeToWasi(WGPUFeatureLevel featureLevel)
     switch (featureLevel) {
         case WGPUFeatureLevel_Compatibility:
             output.val.ptr = malloc(strlen(compatibility)+1);
-            memcpy(output.val.ptr, compatibility, strlen(compatibility));
+            memcpy(output.val.ptr, compatibility, strlen(compatibility)+1);
             output.val.len = strlen(compatibility);
             break;
         case WGPUFeatureLevel_Core:
-            output.val.ptr = malloc(strlen(core));
+            output.val.ptr = malloc(strlen(core)+1);
             memcpy(output.val.ptr, core, strlen(core)+1);
             output.val.len = strlen(core);
             break;
