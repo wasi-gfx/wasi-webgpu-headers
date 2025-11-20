@@ -399,10 +399,28 @@ void wgpuCommandEncoderCopyBufferToBuffer(WGPUCommandEncoder commandEncoder, WGP
 // {
 // }
 
-// WGPUCommandBuffer wgpuCommandEncoderFinish(WGPUCommandEncoder commandEncoder,
-//     WGPUCommandBufferDescriptor const* descriptor)
-// {
-// }
+WGPUCommandBuffer wgpuCommandEncoderFinish(WGPUCommandEncoder commandEncoder,
+    WGPUCommandBufferDescriptor const* descriptor)
+{
+    if(!commandEncoder) unreachable();
+
+    wasi_webgpu_webgpu_gpu_command_buffer_descriptor_t descriptor_wasi = {
+        .label = labelNativeToWasi(&descriptor->label),
+    };
+
+    wasi_webgpu_webgpu_borrow_gpu_command_encoder_t command_encoder_borrow = wasi_webgpu_webgpu_borrow_gpu_command_encoder(commandEncoder->command_encoder);
+    wasi_webgpu_webgpu_own_gpu_command_buffer_t command_buffer_wasi = wasi_webgpu_webgpu_method_gpu_command_encoder_finish(
+        command_encoder_borrow,
+        &descriptor_wasi
+    );
+
+    wasi_webgpu_webgpu_gpu_command_buffer_descriptor_free(&descriptor_wasi);
+
+    WGPUCommandBufferImpl* command_buffer_struct = malloc(sizeof(WGPUCommandBufferImpl));
+    command_buffer_struct->command_buffer = command_buffer_wasi;
+    command_buffer_struct->refCount ++;
+    return command_buffer_struct;
+}
 
 // void wgpuCommandEncoderInsertDebugMarker(WGPUCommandEncoder commandEncoder, WGPUStringView markerLabel)
 // {
