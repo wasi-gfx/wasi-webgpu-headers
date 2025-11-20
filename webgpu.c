@@ -418,7 +418,7 @@ WGPUCommandBuffer wgpuCommandEncoderFinish(WGPUCommandEncoder commandEncoder,
 
     WGPUCommandBufferImpl* command_buffer_struct = malloc(sizeof(WGPUCommandBufferImpl));
     command_buffer_struct->command_buffer = command_buffer_wasi;
-    command_buffer_struct->refCount ++;
+    command_buffer_struct->refCount = 1;
     return command_buffer_struct;
 }
 
@@ -621,7 +621,7 @@ WGPUCommandEncoder wgpuDeviceCreateCommandEncoder(WGPUDevice device, WGPUCommand
 
     WGPUCommandEncoderImpl* command_encoder_struct = malloc(sizeof(WGPUCommandEncoderImpl));
     command_encoder_struct->command_encoder = command_encoder;
-    command_encoder_struct->refCount ++;
+    command_encoder_struct->refCount = 1;
     return command_encoder_struct;
 }
 
