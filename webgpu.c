@@ -103,6 +103,7 @@ typedef struct WGPUTextureViewImpl {
     uint32_t refCount;
 } WGPUTextureViewImpl;
 
+imports_option_string_t labelNativeToWasi(WGPUStringView const* label);
 imports_option_string_t featureLevelNativeToWasi(WGPUFeatureLevel featureLevel);
 wasi_webgpu_webgpu_option_gpu_power_preference_t powerPreferenceNativeToWasi(WGPUPowerPreference powerPreference);
 wasi_webgpu_webgpu_gpu_feature_name_t featureNativeToWasi(WGPUFeatureName const feature);
@@ -152,6 +153,8 @@ WGPUFuture wgpuAdapterRequestDevice(WGPUAdapter adapter, WGPUDeviceDescriptor co
     if (descriptor)
     {
         descriptor_wasi.required_limits = limitsNativeToWasi(descriptor->requiredLimits);
+
+        descriptor_wasi.label = labelNativeToWasi(&descriptor->label);
 
         if (descriptor->requiredFeatures)
         {
@@ -1239,6 +1242,20 @@ void wgpuTextureViewRelease(WGPUTextureView textureView)
         wasi_webgpu_webgpu_gpu_texture_view_drop_own(textureView->texture_view);
         free(textureView);
     }
+}
+
+imports_option_string_t labelNativeToWasi(WGPUStringView const* label)
+{
+
+    imports_option_string_t output = {};
+    if(!label) return output;
+
+    output.is_some = true;
+    output.val.ptr = malloc(label->length + 1);
+    memcpy(output.val.ptr, label->data, label->length + 1);
+    output.val.len = label->length;
+
+    return output;
 }
 
 wasi_webgpu_webgpu_gpu_buffer_map_state_t bufferMapStateNativeToWasi(WGPUBufferMapState const bufferMapState)
