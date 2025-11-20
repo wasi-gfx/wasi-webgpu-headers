@@ -989,9 +989,31 @@ void wgpuQueueSubmit(WGPUQueue queue, size_t commandCount, WGPUCommandBuffer con
     );
 }
 
-// void wgpuQueueWriteBuffer(WGPUQueue queue, WGPUBuffer buffer, uint64_t bufferOffset, void const* data, size_t size)
-// {
-// }
+void wgpuQueueWriteBuffer(WGPUQueue queue, WGPUBuffer buffer, uint64_t bufferOffset, void const* data, size_t size)
+{
+    if(!queue || !buffer || !data) unreachable();
+
+    imports_list_u8_t data_wasi = {
+        .ptr = (uint8_t*)data,
+        .len = size,
+    };
+
+    wasi_webgpu_webgpu_write_buffer_error_t err;
+    bool success = wasi_webgpu_webgpu_method_gpu_queue_write_buffer_with_copy(
+        wasi_webgpu_webgpu_borrow_gpu_queue(queue->queue),
+        wasi_webgpu_webgpu_borrow_gpu_buffer(buffer->buffer),
+        bufferOffset,
+        &data_wasi,
+        NULL, // no data-offset in webgpu.h
+        NULL, // no data-size in webgpu.h
+        &err
+    );
+    if (!success)
+    {
+        wasi_webgpu_webgpu_write_buffer_error_free(&err);
+        todo();
+    }
+}
 
 // void wgpuQueueWriteTexture(WGPUQueue queue, WGPUTexelCopyTextureInfo const* destination, void const* data, size_t dataSize,
 //     WGPUTexelCopyBufferLayout const* dataLayout, WGPUExtent3D const* writeSize)
