@@ -531,6 +531,19 @@ void wgpuComputePassEncoderRelease(WGPUComputePassEncoder computePassEncoder)
     }
 }
 
+WGPUBindGroupLayout wgpuComputePipelineGetBindGroupLayout(WGPUComputePipeline computePipeline, uint32_t groupIndex)
+{
+    if(!computePipeline) unreachable();
+
+    wasi_webgpu_webgpu_own_gpu_bind_group_layout_t bind_group_layout = wasi_webgpu_webgpu_method_gpu_compute_pipeline_get_bind_group_layout(
+        wasi_webgpu_webgpu_borrow_gpu_compute_pipeline(computePipeline->compute_pipeline),
+        groupIndex
+    );
+    WGPUBindGroupLayoutImpl* bind_group_layout_struct = malloc(sizeof(WGPUBindGroupLayoutImpl));
+    bind_group_layout_struct->bind_group_layout = bind_group_layout;
+    bind_group_layout_struct->refCount = 1;
+    return (WGPUBindGroupLayout)bind_group_layout_struct;
+}
 
 // void wgpuComputePipelineSetLabel(WGPUComputePipeline computePipeline, WGPUStringView label)
 // {
