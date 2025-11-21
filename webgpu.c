@@ -758,9 +758,50 @@ WGPUCommandEncoder wgpuDeviceCreateCommandEncoder(WGPUDevice device, WGPUCommand
 // {
 // }
 
-// WGPUShaderModule wgpuDeviceCreateShaderModule(WGPUDevice device, WGPUShaderModuleDescriptor const* descriptor)
-// {
-// }
+WGPUShaderModule wgpuDeviceCreateShaderModule(WGPUDevice device, WGPUShaderModuleDescriptor const* descriptor)
+{
+    if (!device || !descriptor) unreachable();
+
+    WGPUShaderSourceWGSL* wgsl_source = NULL;
+    switch (descriptor->nextInChain->sType) {
+        case WGPUSType_ShaderSourceWGSL:
+            wgsl_source = (WGPUShaderSourceWGSL*)descriptor->nextInChain;
+            break;
+        case WGPUSType_ShaderSourceSPIRV:
+            // consider adding SPIRV support
+            todo();
+            break;
+        default:
+            unreachable();
+    }
+
+    imports_string_t code_wasi = {
+        .ptr = malloc(wgsl_source->code.length+1),
+        .len = wgsl_source->code.length,
+    };
+    memcpy(code_wasi.ptr, wgsl_source->code.data, wgsl_source->code.length+1);
+
+    wasi_webgpu_webgpu_gpu_shader_module_descriptor_t descriptor_wasi = {
+        .code = code_wasi,
+        .label = labelNativeToWasi(&descriptor->label),
+        .compilation_hints = (wasi_webgpu_webgpu_option_list_gpu_shader_module_compilation_hint_t){
+            // webgpu.h doesn't have compilation hints yet
+            .is_some = false,
+        },
+    };
+
+    wasi_webgpu_webgpu_own_gpu_shader_module_t shader_module = wasi_webgpu_webgpu_method_gpu_device_create_shader_module(
+        wasi_webgpu_webgpu_borrow_gpu_device(device->device),
+        &descriptor_wasi
+    );
+
+    wasi_webgpu_webgpu_gpu_shader_module_descriptor_free(&descriptor_wasi);
+
+    WGPUShaderModuleImpl* shader_module_struct = malloc(sizeof(WGPUShaderModuleImpl));
+    shader_module_struct->module = shader_module;
+    shader_module_struct->refCount = 1;
+    return shader_module_struct;
+}
 
 // WGPUTexture wgpuDeviceCreateTexture(WGPUDevice device, WGPUTextureDescriptor const* descriptor)
 // {
