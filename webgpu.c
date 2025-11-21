@@ -987,6 +987,8 @@ void wgpuQueueSubmit(WGPUQueue queue, size_t commandCount, WGPUCommandBuffer con
         wasi_webgpu_webgpu_borrow_gpu_queue(queue->queue),
         &commands_wasi
     );
+
+    wasi_webgpu_webgpu_list_borrow_gpu_command_buffer_free(&commands_wasi);
 }
 
 void wgpuQueueWriteBuffer(WGPUQueue queue, WGPUBuffer buffer, uint64_t bufferOffset, void const* data, size_t size)
