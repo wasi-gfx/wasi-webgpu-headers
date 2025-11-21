@@ -882,7 +882,7 @@ WGPUFuture wgpuInstanceRequestAdapter(WGPUInstance instance, WGPURequestAdapterO
 
     wasi_webgpu_webgpu_gpu_request_adapter_options_free(&wasi_options);
 
-    callbackInfo.callback(WGPURequestAdapterStatus_Success, adapter, WGPU_STRING_VIEW_INIT, NULL, NULL);
+    callbackInfo.callback(WGPURequestAdapterStatus_Success, adapter, WGPU_STRING_VIEW_INIT, callbackInfo.userdata1, callbackInfo.userdata2);
     return (WGPUFuture) { .id = -1 };
 }
 
