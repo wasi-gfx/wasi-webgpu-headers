@@ -1453,9 +1453,8 @@ void wgpuTextureViewRelease(WGPUTextureView textureView)
 
 imports_option_string_t labelNativeToWasi(WGPUStringView const* label)
 {
-
     imports_option_string_t output = {};
-    if(!label) return output;
+    if(!label || !label->data) return output;
 
     output.is_some = true;
     output.val.ptr = malloc(label->length + 1);
