@@ -109,6 +109,7 @@ imports_option_string_t labelNativeToWasi(WGPUStringView const* label);
 imports_option_string_t featureLevelNativeToWasi(WGPUFeatureLevel featureLevel);
 wasi_webgpu_webgpu_option_gpu_power_preference_t powerPreferenceNativeToWasi(WGPUPowerPreference powerPreference);
 wasi_webgpu_webgpu_gpu_feature_name_t featureNativeToWasi(WGPUFeatureName const feature);
+imports_string_t featureNativeToWasiString(WGPUFeatureName const feature);
 WGPUFeatureName featureWasiToNative(wasi_webgpu_webgpu_gpu_feature_name_t const feature);
 wasi_webgpu_webgpu_option_own_record_option_gpu_size64_t limitsNativeToWasi(WGPULimits const* limits_native);
 wasi_webgpu_webgpu_gpu_buffer_map_state_t bufferMapStateNativeToWasi(WGPUBufferMapState const bufferMapState);
@@ -142,9 +143,17 @@ WGPUInstance wgpuCreateInstance(WGPUInstanceDescriptor const* descriptor)
 // {
 // }
 
-// WGPUBool wgpuAdapterHasFeature(WGPUAdapter adapter, WGPUFeatureName feature)
-// {
-// }
+WGPUBool wgpuAdapterHasFeature(WGPUAdapter adapter, WGPUFeatureName feature)
+{
+    imports_string_t feature_wasi_string = featureNativeToWasiString(feature);
+    wasi_webgpu_webgpu_own_gpu_supported_features_t available_features = wasi_webgpu_webgpu_method_gpu_adapter_features(
+        wasi_webgpu_webgpu_borrow_gpu_adapter(adapter->adapter)
+    );
+    return wasi_webgpu_webgpu_method_gpu_supported_features_has(
+        wasi_webgpu_webgpu_borrow_gpu_supported_features(available_features),
+        &feature_wasi_string
+    );
+}
 
 WGPUFuture wgpuAdapterRequestDevice(WGPUAdapter adapter, WGPUDeviceDescriptor const* descriptor, WGPURequestDeviceCallbackInfo callbackInfo)
 {
@@ -799,9 +808,17 @@ WGPUQueue wgpuDeviceGetQueue(WGPUDevice device)
     return queue_struct;
 }
 
-// WGPUBool wgpuDeviceHasFeature(WGPUDevice device, WGPUFeatureName feature)
-// {
-// }
+WGPUBool wgpuDeviceHasFeature(WGPUDevice device, WGPUFeatureName feature)
+{
+    imports_string_t feature_wasi_string = featureNativeToWasiString(feature);
+    wasi_webgpu_webgpu_own_gpu_supported_features_t available_features = wasi_webgpu_webgpu_method_gpu_device_features(
+        wasi_webgpu_webgpu_borrow_gpu_device(device->device)
+    );
+    return wasi_webgpu_webgpu_method_gpu_supported_features_has(
+        wasi_webgpu_webgpu_borrow_gpu_supported_features(available_features),
+        &feature_wasi_string
+    );
+}
 
 // WGPUFuture wgpuDevicePopErrorScope(WGPUDevice device, WGPUPopErrorScopeCallbackInfo callbackInfo)
 // {
@@ -1581,6 +1598,93 @@ wasi_webgpu_webgpu_gpu_feature_name_t featureNativeToWasi(WGPUFeatureName const 
         default:
             unreachable();
     }
+}
+
+// needed while feature checking is done with strings
+// spec might change https://github.com/WebAssembly/wasi-gfx/issues/58
+imports_string_t featureNativeToWasiString(WGPUFeatureName const feature)
+{
+    const char* depth_clip_control = "depth-clip-control";
+    const char* depth32float_stencil8 = "depth32float-stencil8";
+    const char* texture_compression_bc = "texture-compression-bc";
+    const char* texture_compression_bc_sliced3d = "texture-compression-bc-sliced3d";
+    const char* texture_compression_etc2 = "texture-compression-etc2";
+    const char* texture_compression_astc = "texture-compression-astc";
+    const char* texture_compression_astc_sliced3d = "texture-compression-astc-sliced3d";
+    const char* timestamp_query = "timestamp-query";
+    const char* indirect_first_instance = "indirect-first-instance";
+    const char* shader_f16 = "shader-f16";
+    const char* rg11b10ufloat_renderable = "rg11b10ufloat-renderable";
+    const char* bgra8unorm_storage = "bgra8unorm-storage";
+    const char* float32_filterable = "float32-filterable";
+    const char* float32_blendable = "float32-blendable";
+    const char* clip_distances = "clip-distances";
+    const char* dual_source_blending = "dual-source-blending";
+    const char* subgroups = "subgroups";
+
+    const char* c_string = NULL;
+
+    switch (feature) {
+        case WGPUFeatureName_DepthClipControl:
+            c_string = depth_clip_control;
+            break;
+        case WGPUFeatureName_Depth32FloatStencil8:
+            c_string = depth32float_stencil8;
+            break;
+        case WGPUFeatureName_TextureCompressionBC:
+            c_string = texture_compression_bc;
+            break;
+        case WGPUFeatureName_TextureCompressionBCSliced3D:
+            c_string = texture_compression_bc_sliced3d;
+            break;
+        case WGPUFeatureName_TextureCompressionETC2:
+            c_string = texture_compression_etc2;
+            break;
+        case WGPUFeatureName_TextureCompressionASTC:
+            c_string = texture_compression_astc;
+            break;
+        case WGPUFeatureName_TextureCompressionASTCSliced3D:
+            c_string = texture_compression_astc_sliced3d;
+            break;
+        case WGPUFeatureName_TimestampQuery:
+            c_string = timestamp_query;
+            break;
+        case WGPUFeatureName_IndirectFirstInstance:
+            c_string = indirect_first_instance;
+            break;
+        case WGPUFeatureName_ShaderF16:
+            c_string = shader_f16;
+            break;
+        case WGPUFeatureName_RG11B10UfloatRenderable:
+            c_string = rg11b10ufloat_renderable;
+            break;
+        case WGPUFeatureName_BGRA8UnormStorage:
+            c_string = bgra8unorm_storage;
+            break;
+        case WGPUFeatureName_Float32Filterable:
+            c_string = float32_filterable;
+            break;
+        case WGPUFeatureName_Float32Blendable:
+            c_string = float32_blendable;
+            break;
+        case WGPUFeatureName_ClipDistances:
+            c_string = clip_distances;
+            break;
+        case WGPUFeatureName_DualSourceBlending:
+            c_string = dual_source_blending;
+            break;
+        case WGPUFeatureName_Subgroups:
+            c_string = subgroups;
+            break;
+        default:
+            unreachable();
+    }
+
+    imports_string_t output = {};
+    output.ptr = malloc(strlen(c_string)+1);
+    memcpy(output.ptr, c_string, strlen(c_string)+1);
+    output.len = strlen(c_string);
+    return output;
 }
 
 WGPUFeatureName featureWasiToNative(wasi_webgpu_webgpu_gpu_feature_name_t const feature)
