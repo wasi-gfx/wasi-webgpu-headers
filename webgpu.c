@@ -776,10 +776,10 @@ WGPUShaderModule wgpuDeviceCreateShaderModule(WGPUDevice device, WGPUShaderModul
     }
 
     imports_string_t code_wasi = {
-        .ptr = malloc(wgsl_source->code.length+1),
+        .ptr = malloc(wgsl_source->code.length),
         .len = wgsl_source->code.length,
     };
-    memcpy(code_wasi.ptr, wgsl_source->code.data, wgsl_source->code.length+1);
+    memcpy(code_wasi.ptr, wgsl_source->code.data, wgsl_source->code.length);
 
     wasi_webgpu_webgpu_gpu_shader_module_descriptor_t descriptor_wasi = {
         .code = code_wasi,
