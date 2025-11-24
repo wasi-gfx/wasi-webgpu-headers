@@ -465,10 +465,46 @@ void wgpuCommandBufferRelease(WGPUCommandBuffer commandBuffer)
     }
 }
 
-// WGPUComputePassEncoder wgpuCommandEncoderBeginComputePass(WGPUCommandEncoder commandEncoder,
-//     WGPUComputePassDescriptor const* descriptor)
-// {
-// }
+WGPUComputePassEncoder wgpuCommandEncoderBeginComputePass(WGPUCommandEncoder commandEncoder,
+    WGPUComputePassDescriptor const* descriptor)
+{
+    if(!commandEncoder) unreachable();
+
+    wasi_webgpu_webgpu_gpu_compute_pass_descriptor_t descriptor_wasi = {};
+
+    if (descriptor) {
+        descriptor_wasi.label = labelNativeToWasi(&descriptor->label);
+        if (descriptor->timestampWrites) {
+            if (!descriptor->timestampWrites->querySet) unreachable();
+
+            WGPUPassTimestampWrites const* writesNative = descriptor->timestampWrites;
+            wasi_webgpu_webgpu_gpu_compute_pass_timestamp_writes_t * writes_wasi = &descriptor_wasi.timestamp_writes.val;
+
+            descriptor_wasi.timestamp_writes.is_some = true;
+            writes_wasi->query_set = wasi_webgpu_webgpu_borrow_gpu_query_set(writesNative->querySet->query_set);
+            writes_wasi->beginning_of_pass_write_index.is_some = writesNative->beginningOfPassWriteIndex == WGPU_QUERY_SET_INDEX_UNDEFINED;
+            if(writes_wasi->beginning_of_pass_write_index.is_some) {
+                writes_wasi->beginning_of_pass_write_index.val = writesNative->beginningOfPassWriteIndex;
+            }
+            writes_wasi->end_of_pass_write_index.is_some = writesNative->endOfPassWriteIndex == WGPU_QUERY_SET_INDEX_UNDEFINED;
+            if(writes_wasi->end_of_pass_write_index.is_some) {
+                writes_wasi->end_of_pass_write_index.val = writesNative->endOfPassWriteIndex;
+            }
+        }
+    };
+
+    wasi_webgpu_webgpu_own_gpu_compute_pass_encoder_t compute_pass_encoder = wasi_webgpu_webgpu_method_gpu_command_encoder_begin_compute_pass(
+        wasi_webgpu_webgpu_borrow_gpu_command_encoder(commandEncoder->command_encoder),
+        descriptor ? &descriptor_wasi : NULL
+    );
+
+    wasi_webgpu_webgpu_gpu_compute_pass_descriptor_free(&descriptor_wasi);
+
+    WGPUComputePassEncoderImpl* compute_pass_encoder_struct = malloc(sizeof(WGPUComputePassEncoderImpl));
+    compute_pass_encoder_struct->compute_pass_encoder = compute_pass_encoder;
+    compute_pass_encoder_struct->refCount = 1;
+    return compute_pass_encoder_struct;
+}
 
 // WGPURenderPassEncoder wgpuCommandEncoderBeginRenderPass(WGPUCommandEncoder commandEncoder,
 //     WGPURenderPassDescriptor const* descriptor)
