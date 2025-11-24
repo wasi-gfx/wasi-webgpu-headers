@@ -604,10 +604,47 @@ void wgpuComputePassEncoderEnd(WGPUComputePassEncoder computePassEncoder)
 // {
 // }
 
-// void wgpuComputePassEncoderSetBindGroup(WGPUComputePassEncoder computePassEncoder, uint32_t groupIndex,
-//     WGPUBindGroup group, size_t dynamicOffsetCount, uint32_t const* dynamicOffsets)
-// {
-// }
+void wgpuComputePassEncoderSetBindGroup(WGPUComputePassEncoder computePassEncoder, uint32_t groupIndex,
+    WGPUBindGroup group, size_t dynamicOffsetCount, uint32_t const* dynamicOffsets)
+{
+    if(!computePassEncoder) unreachable();
+
+    wasi_webgpu_webgpu_set_bind_group_error_t err;
+
+    wasi_webgpu_webgpu_borrow_gpu_bind_group_t *group_wasi = NULL;
+    if (group) {
+        wasi_webgpu_webgpu_borrow_gpu_bind_group_t group_borrow = wasi_webgpu_webgpu_borrow_gpu_bind_group(group->bind_group);
+        group_wasi = &group_borrow;
+    }
+
+    imports_list_gpu_buffer_dynamic_offset_t * offsets_data_wasi = NULL;
+    if (dynamicOffsetCount > 0) {
+        imports_list_gpu_buffer_dynamic_offset_t offsets_data_val = {
+            .ptr = malloc(dynamicOffsetCount * sizeof(wasi_webgpu_webgpu_gpu_buffer_dynamic_offset_t)),
+            .len = dynamicOffsetCount,
+        };
+        memcpy(offsets_data_val.ptr, dynamicOffsets, dynamicOffsetCount * sizeof(wasi_webgpu_webgpu_gpu_buffer_dynamic_offset_t));
+
+        offsets_data_wasi = &offsets_data_val;
+    }
+
+    bool success = wasi_webgpu_webgpu_method_gpu_compute_pass_encoder_set_bind_group(
+        wasi_webgpu_webgpu_borrow_gpu_compute_pass_encoder(computePassEncoder->compute_pass_encoder),
+        groupIndex,
+        group_wasi,
+        offsets_data_wasi,
+        NULL, // No offsets offset in webgpu.h
+        NULL, // length already handled in group_wasi.val.len
+        &err
+    );
+    if (!success) {
+        wasi_webgpu_webgpu_set_bind_group_error_free(&err);
+        todo();
+    }
+    if (dynamicOffsetCount > 0) {
+        free(offsets_data_wasi->ptr);
+    }
+}
 
 // void wgpuComputePassEncoderSetLabel(WGPUComputePassEncoder computePassEncoder, WGPUStringView label)
 // {
