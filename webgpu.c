@@ -574,10 +574,16 @@ void wgpuCommandEncoderRelease(WGPUCommandEncoder commandEncoder)
     }
 }
 
-// void wgpuComputePassEncoderDispatchWorkgroups(WGPUComputePassEncoder computePassEncoder, uint32_t workgroupCountX,
-//     uint32_t workgroupCountY, uint32_t workgroupCountZ)
-// {
-// }
+void wgpuComputePassEncoderDispatchWorkgroups(WGPUComputePassEncoder computePassEncoder, uint32_t workgroupCountX,
+    uint32_t workgroupCountY, uint32_t workgroupCountZ)
+{
+    wasi_webgpu_webgpu_method_gpu_compute_pass_encoder_dispatch_workgroups(
+        wasi_webgpu_webgpu_borrow_gpu_compute_pass_encoder(computePassEncoder->compute_pass_encoder),
+        workgroupCountX,
+        &workgroupCountY,
+        &workgroupCountZ
+    );
+}
 
 // void wgpuComputePassEncoderDispatchWorkgroupsIndirect(WGPUComputePassEncoder computePassEncoder,
 //     WGPUBuffer indirectBuffer, uint64_t indirectOffset)
