@@ -678,7 +678,7 @@ void wgpuComputePipelineRelease(WGPUComputePipeline computePipeline)
 
 WGPUBindGroup wgpuDeviceCreateBindGroup(WGPUDevice device, WGPUBindGroupDescriptor const* descriptor)
 {
-    if (!device || !descriptor) unreachable();
+    if (!device || !descriptor || !descriptor->entries) unreachable();
 
     wasi_webgpu_webgpu_gpu_bind_group_entry_t* entries_array = malloc(
         descriptor->entryCount * sizeof(wasi_webgpu_webgpu_gpu_bind_group_entry_t)
