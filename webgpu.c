@@ -153,6 +153,9 @@ WGPUBool wgpuAdapterHasFeature(WGPUAdapter adapter, WGPUFeatureName feature)
         wasi_webgpu_webgpu_borrow_gpu_supported_features(available_features),
         &feature_wasi_string
     );
+      // Free allocated resources
+      imports_string_free(&feature_wasi_string);
+      wasi_webgpu_webgpu_gpu_supported_features_drop_own(available_features);
 }
 
 WGPUFuture wgpuAdapterRequestDevice(WGPUAdapter adapter, WGPUDeviceDescriptor const* descriptor, WGPURequestDeviceCallbackInfo callbackInfo)
