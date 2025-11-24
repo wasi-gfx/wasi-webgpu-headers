@@ -676,9 +676,67 @@ void wgpuComputePipelineRelease(WGPUComputePipeline computePipeline)
     }
 }
 
-// WGPUBindGroup wgpuDeviceCreateBindGroup(WGPUDevice device, WGPUBindGroupDescriptor const* descriptor)
-// {
-// }
+WGPUBindGroup wgpuDeviceCreateBindGroup(WGPUDevice device, WGPUBindGroupDescriptor const* descriptor)
+{
+    if (!device || !descriptor) unreachable();
+
+    wasi_webgpu_webgpu_gpu_bind_group_entry_t* entries_array = malloc(
+        descriptor->entryCount * sizeof(wasi_webgpu_webgpu_gpu_bind_group_entry_t)
+    );
+
+    for (size_t i = 0; i < descriptor->entryCount; i++) {
+        wasi_webgpu_webgpu_gpu_binding_resource_t resource = {};
+        if (descriptor->entries[i].buffer) {
+            resource.tag = WASI_WEBGPU_WEBGPU_GPU_BINDING_RESOURCE_GPU_BUFFER_BINDING;
+            resource.val.gpu_buffer_binding = (wasi_webgpu_webgpu_gpu_buffer_binding_t) {
+                .buffer = wasi_webgpu_webgpu_borrow_gpu_buffer(descriptor->entries[i].buffer->buffer),
+                .offset = (imports_option_gpu_size64_t) {
+                    .is_some = true,
+                    .val = descriptor->entries[i].offset,
+                },
+                .size = (imports_option_gpu_size64_t) {
+                    .is_some = true,
+                    .val = descriptor->entries[i].size,
+                },
+            };
+        }
+        if (descriptor->entries[i].sampler) {
+            resource.tag = WASI_WEBGPU_WEBGPU_GPU_BINDING_RESOURCE_GPU_SAMPLER;
+            todo();
+        } else if (descriptor->entries[i].textureView) {
+            resource.tag = WASI_WEBGPU_WEBGPU_GPU_BINDING_RESOURCE_GPU_TEXTURE_VIEW;
+            todo();
+        } else {
+            unreachable();
+        }
+
+        entries_array[i] = (wasi_webgpu_webgpu_gpu_bind_group_entry_t) {
+            .binding = descriptor->entries[i].binding,
+            .resource = resource,
+        };
+    }
+
+    wasi_webgpu_webgpu_gpu_bind_group_descriptor_t descriptor_wasi = {
+        .layout = wasi_webgpu_webgpu_borrow_gpu_bind_group_layout(descriptor->layout->bind_group_layout),
+        .label = labelNativeToWasi(&descriptor->label),
+        .entries = (wasi_webgpu_webgpu_list_gpu_bind_group_entry_t) {
+            .ptr = entries_array,
+            .len = descriptor->entryCount,
+        },
+    };
+
+    wasi_webgpu_webgpu_own_gpu_bind_group_t bind_group = wasi_webgpu_webgpu_method_gpu_device_create_bind_group(
+        wasi_webgpu_webgpu_borrow_gpu_device(device->device),
+        &descriptor_wasi
+    );
+
+    wasi_webgpu_webgpu_gpu_bind_group_descriptor_free(&descriptor_wasi);
+
+    WGPUBindGroupImpl* bind_group_struct = malloc(sizeof(WGPUBindGroupImpl));
+    bind_group_struct->bind_group = bind_group;
+    bind_group_struct->refCount = 1;
+    return bind_group_struct;
+}
 
 // WGPUBindGroupLayout wgpuDeviceCreateBindGroupLayout(WGPUDevice device, WGPUBindGroupLayoutDescriptor const* descriptor)
 // {
