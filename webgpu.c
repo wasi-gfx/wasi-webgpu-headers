@@ -947,10 +947,13 @@ WGPUFuture wgpuInstanceRequestAdapter(WGPUInstance instance, WGPURequestAdapterO
     return (WGPUFuture) { .id = -1 };
 }
 
-// WGPUWaitStatus wgpuInstanceWaitAny(WGPUInstance instance, size_t futureCount, WGPUFutureWaitInfo* futures,
-//     uint64_t timeoutNS)
-// {
-// }
+WGPUWaitStatus wgpuInstanceWaitAny(WGPUInstance instance, size_t futureCount, WGPUFutureWaitInfo* futures,
+    uint64_t timeoutNS)
+{
+    // TODO: implement futures
+    // For now, the returning function is just calling the callback immediately
+    return WGPUWaitStatus_Success;
+}
 
 void wgpuInstanceAddRef(WGPUInstance instance)
 {
