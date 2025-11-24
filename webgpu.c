@@ -611,15 +611,17 @@ void wgpuComputePassEncoderSetBindGroup(WGPUComputePassEncoder computePassEncode
 
     wasi_webgpu_webgpu_set_bind_group_error_t err;
 
+    wasi_webgpu_webgpu_borrow_gpu_bind_group_t group_borrow;
     wasi_webgpu_webgpu_borrow_gpu_bind_group_t *group_wasi = NULL;
     if (group) {
-        wasi_webgpu_webgpu_borrow_gpu_bind_group_t group_borrow = wasi_webgpu_webgpu_borrow_gpu_bind_group(group->bind_group);
+        group_borrow = wasi_webgpu_webgpu_borrow_gpu_bind_group(group->bind_group);
         group_wasi = &group_borrow;
     }
 
+    imports_list_gpu_buffer_dynamic_offset_t offsets_data_val;
     imports_list_gpu_buffer_dynamic_offset_t * offsets_data_wasi = NULL;
     if (dynamicOffsetCount > 0) {
-        imports_list_gpu_buffer_dynamic_offset_t offsets_data_val = {
+        offsets_data_val = (imports_list_gpu_buffer_dynamic_offset_t){
             .ptr = malloc(dynamicOffsetCount * sizeof(wasi_webgpu_webgpu_gpu_buffer_dynamic_offset_t)),
             .len = dynamicOffsetCount,
         };
