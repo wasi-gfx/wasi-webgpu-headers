@@ -1689,10 +1689,6 @@ imports_string_t featureNativeToWasiString(WGPUFeatureName const feature)
     memcpy(output.ptr, c_string, len);
     output.len = len;
     return output;
-    output.ptr = malloc(strlen(c_string)+1);
-    memcpy(output.ptr, c_string, strlen(c_string)+1);
-    output.len = strlen(c_string);
-    return output;
 }
 
 WGPUFeatureName featureWasiToNative(wasi_webgpu_webgpu_gpu_feature_name_t const feature)
