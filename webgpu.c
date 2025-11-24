@@ -699,8 +699,7 @@ WGPUBindGroup wgpuDeviceCreateBindGroup(WGPUDevice device, WGPUBindGroupDescript
                     .val = descriptor->entries[i].size,
                 },
             };
-        }
-        if (descriptor->entries[i].sampler) {
+        } else if (descriptor->entries[i].sampler) {
             resource.tag = WASI_WEBGPU_WEBGPU_GPU_BINDING_RESOURCE_GPU_SAMPLER;
             todo();
         } else if (descriptor->entries[i].textureView) {
