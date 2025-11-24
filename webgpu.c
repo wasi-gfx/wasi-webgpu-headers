@@ -735,9 +735,70 @@ WGPUCommandEncoder wgpuDeviceCreateCommandEncoder(WGPUDevice device, WGPUCommand
     return command_encoder_struct;
 }
 
-// WGPUComputePipeline wgpuDeviceCreateComputePipeline(WGPUDevice device, WGPUComputePipelineDescriptor const* descriptor)
-// {
-// }
+WGPUComputePipeline wgpuDeviceCreateComputePipeline(WGPUDevice device, WGPUComputePipelineDescriptor const* descriptor)
+{
+    if (!device || !descriptor) unreachable();
+
+    wasi_webgpu_webgpu_gpu_layout_mode_t layout_wasi = {};
+    if (!descriptor->layout) {
+        layout_wasi.tag = WASI_WEBGPU_WEBGPU_GPU_LAYOUT_MODE_AUTO;
+    } else {
+        layout_wasi.tag = WASI_WEBGPU_WEBGPU_GPU_LAYOUT_MODE_SPECIFIC;
+        layout_wasi.val.specific = wasi_webgpu_webgpu_borrow_gpu_pipeline_layout(descriptor->layout->pipeline_layout);
+    }
+
+    imports_option_string_t entry_point_wasi;
+    entry_point_wasi.is_some = descriptor->compute.entryPoint.data != NULL;
+    if (entry_point_wasi.is_some) {
+        entry_point_wasi.val = (imports_string_t) {
+            .ptr = malloc(descriptor->compute.entryPoint.length),
+            .len = descriptor->compute.entryPoint.length
+        };
+        memcpy(entry_point_wasi.val.ptr, descriptor->compute.entryPoint.data, descriptor->compute.entryPoint.length);
+    };
+
+    wasi_webgpu_webgpu_option_own_record_gpu_pipeline_constant_value_t constants_wasi = {};
+    constants_wasi.is_some = descriptor->compute.constantCount > 0;
+    if (constants_wasi.is_some) {
+        if (!descriptor->compute.constants) unreachable();
+
+        constants_wasi.val = wasi_webgpu_webgpu_constructor_record_gpu_pipeline_constant_value();
+        for (size_t i = 0; i < descriptor->compute.constantCount; i++) {
+            imports_string_t key = {};
+            key.ptr = malloc(descriptor->compute.constants[i].key.length);
+            key.len = descriptor->compute.constants[i].key.length;
+            memcpy(key.ptr, descriptor->compute.constants[i].key.data, descriptor->compute.constants[i].key.length);
+
+            wasi_webgpu_webgpu_method_record_gpu_pipeline_constant_value_add(
+                wasi_webgpu_webgpu_borrow_record_gpu_pipeline_constant_value(constants_wasi.val),
+                &key,
+                descriptor->compute.constants[i].value
+            );
+        }
+    }
+
+    wasi_webgpu_webgpu_gpu_compute_pipeline_descriptor_t descriptor_wasi = {
+        .label = labelNativeToWasi(&descriptor->label),
+        .layout = layout_wasi,
+        .compute = (wasi_webgpu_webgpu_gpu_programmable_stage_t) {
+            .module = wasi_webgpu_webgpu_borrow_gpu_shader_module(descriptor->compute.module->module),
+            .entry_point = entry_point_wasi,
+            .constants = constants_wasi,
+        },
+    };
+
+    wasi_webgpu_webgpu_own_gpu_compute_pipeline_t compute_pipeline = wasi_webgpu_webgpu_method_gpu_device_create_compute_pipeline(
+        wasi_webgpu_webgpu_borrow_gpu_device(device->device),
+        &descriptor_wasi
+    );
+
+    wasi_webgpu_webgpu_gpu_compute_pipeline_descriptor_free(&descriptor_wasi);
+
+    WGPUComputePipelineImpl* compute_pipeline_struct = malloc(sizeof(WGPUComputePipelineImpl));
+    compute_pipeline_struct->compute_pipeline = compute_pipeline;
+    compute_pipeline_struct->refCount = 1;
+    return (WGPUComputePipeline)compute_pipeline_struct;
+}
 
 // WGPUFuture wgpuDeviceCreateComputePipelineAsync(WGPUDevice device, WGPUComputePipelineDescriptor const* descriptor,
 //     WGPUCreateComputePipelineAsyncCallbackInfo callbackInfo)
