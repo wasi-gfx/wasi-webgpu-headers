@@ -760,7 +760,7 @@ WGPUCommandEncoder wgpuDeviceCreateCommandEncoder(WGPUDevice device, WGPUCommand
 
 WGPUShaderModule wgpuDeviceCreateShaderModule(WGPUDevice device, WGPUShaderModuleDescriptor const* descriptor)
 {
-    if (!device || !descriptor) unreachable();
+    if (!device || !descriptor || !descriptor->nextInChain) unreachable();
 
     WGPUShaderSourceWGSL* wgsl_source = NULL;
     switch (descriptor->nextInChain->sType) {
