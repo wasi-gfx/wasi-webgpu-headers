@@ -747,7 +747,7 @@ WGPUComputePipeline wgpuDeviceCreateComputePipeline(WGPUDevice device, WGPUCompu
         layout_wasi.val.specific = wasi_webgpu_webgpu_borrow_gpu_pipeline_layout(descriptor->layout->pipeline_layout);
     }
 
-    imports_option_string_t entry_point_wasi;
+    imports_option_string_t entry_point_wasi = {};
     entry_point_wasi.is_some = descriptor->compute.entryPoint.data != NULL;
     if (entry_point_wasi.is_some) {
         entry_point_wasi.val = (imports_string_t) {
@@ -755,7 +755,7 @@ WGPUComputePipeline wgpuDeviceCreateComputePipeline(WGPUDevice device, WGPUCompu
             .len = descriptor->compute.entryPoint.length
         };
         memcpy(entry_point_wasi.val.ptr, descriptor->compute.entryPoint.data, descriptor->compute.entryPoint.length);
-    };
+    }
 
     wasi_webgpu_webgpu_option_own_record_gpu_pipeline_constant_value_t constants_wasi = {};
     constants_wasi.is_some = descriptor->compute.constantCount > 0;
