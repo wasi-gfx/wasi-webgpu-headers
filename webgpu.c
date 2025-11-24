@@ -482,7 +482,7 @@ WGPUComputePassEncoder wgpuCommandEncoderBeginComputePass(WGPUCommandEncoder com
 
             descriptor_wasi.timestamp_writes.is_some = true;
             writes_wasi->query_set = wasi_webgpu_webgpu_borrow_gpu_query_set(writesNative->querySet->query_set);
-            writes_wasi->beginning_of_pass_write_index.is_some = writesNative->beginningOfPassWriteIndex == WGPU_QUERY_SET_INDEX_UNDEFINED;
+            writes_wasi->beginning_of_pass_write_index.is_some = writesNative->beginningOfPassWriteIndex != WGPU_QUERY_SET_INDEX_UNDEFINED;
             if(writes_wasi->beginning_of_pass_write_index.is_some) {
                 writes_wasi->beginning_of_pass_write_index.val = writesNative->beginningOfPassWriteIndex;
             }
