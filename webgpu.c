@@ -1684,6 +1684,11 @@ imports_string_t featureNativeToWasiString(WGPUFeatureName const feature)
     }
 
     imports_string_t output = {};
+    size_t len = strlen(c_string);
+    output.ptr = malloc(len);
+    memcpy(output.ptr, c_string, len);
+    output.len = len;
+    return output;
     output.ptr = malloc(strlen(c_string)+1);
     memcpy(output.ptr, c_string, strlen(c_string)+1);
     output.len = strlen(c_string);
