@@ -99,7 +99,8 @@ typedef struct WGPUTextureViewImpl {
     uint32_t refCount;
 } WGPUTextureViewImpl;
 
-imports_option_string_t labelNativeToWasi(WGPUStringView const* label);
+imports_string_t stringNativeToWasi(WGPUStringView const* label);
+imports_option_string_t optionalStringNativeToWasi(WGPUStringView const* label);
 imports_option_string_t featureLevelNativeToWasi(WGPUFeatureLevel featureLevel);
 wasi_webgpu_webgpu_option_gpu_power_preference_t powerPreferenceNativeToWasi(WGPUPowerPreference powerPreference);
 wasi_webgpu_webgpu_gpu_feature_name_t featureNativeToWasi(WGPUFeatureName const feature);
@@ -162,7 +163,7 @@ WGPUFuture wgpuAdapterRequestDevice(
     if (descriptor) {
         descriptor_wasi.required_limits = limitsNativeToWasi(descriptor->requiredLimits);
 
-        descriptor_wasi.label = labelNativeToWasi(&descriptor->label);
+        descriptor_wasi.label = optionalStringNativeToWasi(&descriptor->label);
 
         if (descriptor->requiredFeatures) {
             descriptor_wasi.required_features.is_some = true;
@@ -447,7 +448,7 @@ wgpuCommandEncoderBeginComputePass(WGPUCommandEncoder commandEncoder, WGPUComput
     wasi_webgpu_webgpu_gpu_compute_pass_descriptor_t descriptor_wasi = {};
 
     if (descriptor) {
-        descriptor_wasi.label = labelNativeToWasi(&descriptor->label);
+        descriptor_wasi.label = optionalStringNativeToWasi(&descriptor->label);
         if (descriptor->timestampWrites) {
             if (!descriptor->timestampWrites->querySet) unreachable();
 
@@ -533,7 +534,7 @@ wgpuCommandEncoderFinish(WGPUCommandEncoder commandEncoder, WGPUCommandBufferDes
     if (!commandEncoder) unreachable();
 
     wasi_webgpu_webgpu_gpu_command_buffer_descriptor_t descriptor_wasi = {
-        .label = labelNativeToWasi(&descriptor->label),
+        .label = optionalStringNativeToWasi(&descriptor->label),
     };
 
     wasi_webgpu_webgpu_borrow_gpu_command_encoder_t command_encoder_borrow =
@@ -780,7 +781,7 @@ WGPUBindGroup wgpuDeviceCreateBindGroup(WGPUDevice device, WGPUBindGroupDescript
 
     wasi_webgpu_webgpu_gpu_bind_group_descriptor_t descriptor_wasi = {
         .layout = wasi_webgpu_webgpu_borrow_gpu_bind_group_layout(descriptor->layout->bind_group_layout),
-        .label = labelNativeToWasi(&descriptor->label),
+        .label = optionalStringNativeToWasi(&descriptor->label),
         .entries = (wasi_webgpu_webgpu_list_gpu_bind_group_entry_t){
             .ptr = entries_array,
             .len = descriptor->entryCount,
@@ -813,7 +814,7 @@ WGPUBuffer wgpuDeviceCreateBuffer(WGPUDevice device, WGPUBufferDescriptor const*
     if (descriptor) {
         descriptor_wasi.size = descriptor->size;
         descriptor_wasi.usage = descriptor->usage;
-        descriptor_wasi.label = labelNativeToWasi(&descriptor->label);
+        descriptor_wasi.label = optionalStringNativeToWasi(&descriptor->label);
         descriptor_wasi.mapped_at_creation = (imports_option_bool_t){
             .is_some = true,
             .val = descriptor->mappedAtCreation,
@@ -839,7 +840,7 @@ WGPUCommandEncoder wgpuDeviceCreateCommandEncoder(WGPUDevice device, WGPUCommand
 
     wasi_webgpu_webgpu_gpu_command_encoder_descriptor_t descriptor_wasi = {};
     if (descriptor) {
-        descriptor_wasi.label = labelNativeToWasi(&descriptor->label);
+        descriptor_wasi.label = optionalStringNativeToWasi(&descriptor->label);
     }
     wasi_webgpu_webgpu_own_gpu_command_encoder_t command_encoder =
         wasi_webgpu_webgpu_method_gpu_device_create_command_encoder(
@@ -870,9 +871,7 @@ wgpuDeviceCreateComputePipeline(WGPUDevice device, WGPUComputePipelineDescriptor
     imports_option_string_t entry_point_wasi = {};
     entry_point_wasi.is_some = descriptor->compute.entryPoint.data != NULL;
     if (entry_point_wasi.is_some) {
-        entry_point_wasi.val = (imports_string_t){.ptr = malloc(descriptor->compute.entryPoint.length),
-                                                  .len = descriptor->compute.entryPoint.length};
-        memcpy(entry_point_wasi.val.ptr, descriptor->compute.entryPoint.data, descriptor->compute.entryPoint.length);
+        entry_point_wasi.val = stringNativeToWasi(&descriptor->compute.entryPoint);
     }
 
     wasi_webgpu_webgpu_option_own_record_gpu_pipeline_constant_value_t constants_wasi = {};
@@ -882,11 +881,7 @@ wgpuDeviceCreateComputePipeline(WGPUDevice device, WGPUComputePipelineDescriptor
 
         constants_wasi.val = wasi_webgpu_webgpu_constructor_record_gpu_pipeline_constant_value();
         for (size_t i = 0; i < descriptor->compute.constantCount; i++) {
-            imports_string_t key = {};
-            key.ptr = malloc(descriptor->compute.constants[i].key.length);
-            key.len = descriptor->compute.constants[i].key.length;
-            memcpy(key.ptr, descriptor->compute.constants[i].key.data, descriptor->compute.constants[i].key.length);
-
+            imports_string_t key = stringNativeToWasi(&descriptor->compute.constants[i].key);
             wasi_webgpu_webgpu_method_record_gpu_pipeline_constant_value_add(
                 wasi_webgpu_webgpu_borrow_record_gpu_pipeline_constant_value(constants_wasi.val),
                 &key,
@@ -896,7 +891,7 @@ wgpuDeviceCreateComputePipeline(WGPUDevice device, WGPUComputePipelineDescriptor
     }
 
     wasi_webgpu_webgpu_gpu_compute_pipeline_descriptor_t descriptor_wasi = {
-        .label = labelNativeToWasi(&descriptor->label),
+        .label = optionalStringNativeToWasi(&descriptor->label),
         .layout = layout_wasi,
         .compute = (wasi_webgpu_webgpu_gpu_programmable_stage_t){
             .module = wasi_webgpu_webgpu_borrow_gpu_shader_module(descriptor->compute.module->module),
@@ -966,15 +961,11 @@ WGPUShaderModule wgpuDeviceCreateShaderModule(WGPUDevice device, WGPUShaderModul
         unreachable();
     }
 
-    imports_string_t code_wasi = {
-        .ptr = malloc(wgsl_source->code.length),
-        .len = wgsl_source->code.length,
-    };
-    memcpy(code_wasi.ptr, wgsl_source->code.data, wgsl_source->code.length);
+    imports_string_t code_wasi = stringNativeToWasi(&wgsl_source->code);
 
     wasi_webgpu_webgpu_gpu_shader_module_descriptor_t descriptor_wasi = {
         .code = code_wasi,
-        .label = labelNativeToWasi(&descriptor->label),
+        .label = optionalStringNativeToWasi(&descriptor->label),
         .compilation_hints = (wasi_webgpu_webgpu_option_list_gpu_shader_module_compilation_hint_t){
             // webgpu.h doesn't have compilation hints yet
             .is_some = false,
@@ -1655,16 +1646,27 @@ void wgpuTextureViewRelease(WGPUTextureView textureView) {
     }
 }
 
-imports_option_string_t labelNativeToWasi(WGPUStringView const* label) {
-    imports_option_string_t output = {};
-    if (!label || !label->data) return output;
+imports_option_string_t optionalStringNativeToWasi(WGPUStringView const* stringNative) {
+    imports_option_string_t string_wasi = {};
+    if (!stringNative || !stringNative->data) return string_wasi;
 
-    output.is_some = true;
-    output.val.ptr = malloc(label->length + 1);
-    memcpy(output.val.ptr, label->data, label->length + 1);
-    output.val.len = label->length;
+    string_wasi.is_some = true;
+    string_wasi.val.ptr = malloc(stringNative->length);
+    memcpy(string_wasi.val.ptr, stringNative->data, stringNative->length);
+    string_wasi.val.len = stringNative->length;
 
-    return output;
+    return string_wasi;
+}
+
+imports_string_t stringNativeToWasi(WGPUStringView const* stringNative) {
+    if (!stringNative || !stringNative->data) unreachable();
+
+    imports_string_t string_wasi = {};
+    string_wasi.ptr = malloc(stringNative->length);
+    memcpy(string_wasi.ptr, stringNative->data, stringNative->length);
+    string_wasi.len = stringNative->length;
+
+    return string_wasi;
 }
 
 wasi_webgpu_webgpu_gpu_buffer_map_state_t bufferMapStateNativeToWasi(WGPUBufferMapState const bufferMapState) {
@@ -1694,9 +1696,6 @@ WGPUBufferMapState bufferMapStateWasiToNative(wasi_webgpu_webgpu_gpu_buffer_map_
 }
 
 imports_option_string_t featureLevelNativeToWasi(WGPUFeatureLevel featureLevel) {
-    const char* compatibility = "compatibility";
-    const char* core = "core";
-
     imports_option_string_t output = {};
     if (featureLevel == WGPUFeatureLevel_Undefined) {
         return output;
@@ -1705,14 +1704,10 @@ imports_option_string_t featureLevelNativeToWasi(WGPUFeatureLevel featureLevel) 
     output.is_some = true;
     switch (featureLevel) {
     case WGPUFeatureLevel_Compatibility:
-        output.val.ptr = malloc(strlen(compatibility) + 1);
-        memcpy(output.val.ptr, compatibility, strlen(compatibility) + 1);
-        output.val.len = strlen(compatibility);
+        imports_string_dup(&output.val, "compatibility");
         break;
     case WGPUFeatureLevel_Core:
-        output.val.ptr = malloc(strlen(core) + 1);
-        memcpy(output.val.ptr, core, strlen(core) + 1);
-        output.val.len = strlen(core);
+        imports_string_dup(&output.val, "core");
         break;
     default:
         unreachable();
@@ -1784,87 +1779,64 @@ wasi_webgpu_webgpu_gpu_feature_name_t featureNativeToWasi(WGPUFeatureName const 
 // needed while feature checking is done with strings
 // spec might change https://github.com/WebAssembly/wasi-gfx/issues/58
 imports_string_t featureNativeToWasiString(WGPUFeatureName const feature) {
-    const char* depth_clip_control = "depth-clip-control";
-    const char* depth32float_stencil8 = "depth32float-stencil8";
-    const char* texture_compression_bc = "texture-compression-bc";
-    const char* texture_compression_bc_sliced3d = "texture-compression-bc-sliced3d";
-    const char* texture_compression_etc2 = "texture-compression-etc2";
-    const char* texture_compression_astc = "texture-compression-astc";
-    const char* texture_compression_astc_sliced3d = "texture-compression-astc-sliced3d";
-    const char* timestamp_query = "timestamp-query";
-    const char* indirect_first_instance = "indirect-first-instance";
-    const char* shader_f16 = "shader-f16";
-    const char* rg11b10ufloat_renderable = "rg11b10ufloat-renderable";
-    const char* bgra8unorm_storage = "bgra8unorm-storage";
-    const char* float32_filterable = "float32-filterable";
-    const char* float32_blendable = "float32-blendable";
-    const char* clip_distances = "clip-distances";
-    const char* dual_source_blending = "dual-source-blending";
-    const char* subgroups = "subgroups";
-
-    const char* c_string = NULL;
+    imports_string_t output = {};
 
     switch (feature) {
     case WGPUFeatureName_DepthClipControl:
-        c_string = depth_clip_control;
+        imports_string_dup(&output, "depth-clip-control");
         break;
     case WGPUFeatureName_Depth32FloatStencil8:
-        c_string = depth32float_stencil8;
+        imports_string_dup(&output, "depth32float-stencil8");
         break;
     case WGPUFeatureName_TextureCompressionBC:
-        c_string = texture_compression_bc;
+        imports_string_dup(&output, "texture-compression-bc");
         break;
     case WGPUFeatureName_TextureCompressionBCSliced3D:
-        c_string = texture_compression_bc_sliced3d;
+        imports_string_dup(&output, "texture-compression-bc-sliced3d");
         break;
     case WGPUFeatureName_TextureCompressionETC2:
-        c_string = texture_compression_etc2;
+        imports_string_dup(&output, "texture-compression-etc2");
         break;
     case WGPUFeatureName_TextureCompressionASTC:
-        c_string = texture_compression_astc;
+        imports_string_dup(&output, "texture-compression-astc");
         break;
     case WGPUFeatureName_TextureCompressionASTCSliced3D:
-        c_string = texture_compression_astc_sliced3d;
+        imports_string_dup(&output, "texture-compression-astc-sliced3d");
         break;
     case WGPUFeatureName_TimestampQuery:
-        c_string = timestamp_query;
+        imports_string_dup(&output, "timestamp-query");
         break;
     case WGPUFeatureName_IndirectFirstInstance:
-        c_string = indirect_first_instance;
+        imports_string_dup(&output, "indirect-first-instance");
         break;
     case WGPUFeatureName_ShaderF16:
-        c_string = shader_f16;
+        imports_string_dup(&output, "shader-f16");
         break;
     case WGPUFeatureName_RG11B10UfloatRenderable:
-        c_string = rg11b10ufloat_renderable;
+        imports_string_dup(&output, "rg11b10ufloat-renderable");
         break;
     case WGPUFeatureName_BGRA8UnormStorage:
-        c_string = bgra8unorm_storage;
+        imports_string_dup(&output, "bgra8unorm-storage");
         break;
     case WGPUFeatureName_Float32Filterable:
-        c_string = float32_filterable;
+        imports_string_dup(&output, "float32-filterable");
         break;
     case WGPUFeatureName_Float32Blendable:
-        c_string = float32_blendable;
+        imports_string_dup(&output, "float32-blendable");
         break;
     case WGPUFeatureName_ClipDistances:
-        c_string = clip_distances;
+        imports_string_dup(&output, "clip-distances");
         break;
     case WGPUFeatureName_DualSourceBlending:
-        c_string = dual_source_blending;
+        imports_string_dup(&output, "dual-source-blending");
         break;
     case WGPUFeatureName_Subgroups:
-        c_string = subgroups;
+        imports_string_dup(&output, "subgroups");
         break;
     default:
         unreachable();
     }
 
-    imports_string_t output = {};
-    size_t len = strlen(c_string);
-    output.ptr = malloc(len);
-    memcpy(output.ptr, c_string, len);
-    output.len = len;
     return output;
 }
 
@@ -1912,13 +1884,15 @@ WGPUFeatureName featureWasiToNative(wasi_webgpu_webgpu_gpu_feature_name_t const 
 wasi_webgpu_webgpu_option_own_record_option_gpu_size64_t limitsNativeToWasi(WGPULimits const* limits_native) {
 #define ADD_LIMIT_U32(field, name)                                                                                     \
     if (limits_native->field != WGPU_LIMIT_U32_UNDEFINED) {                                                            \
-        imports_string_t str = {.ptr = (uint8_t*)name, .len = strlen(name)};                                           \
+        imports_string_t str = {};                                                                                     \
+        imports_string_dup(&str, name);                                                                                \
         uint64_t val = (uint64_t)limits_native->field;                                                                 \
         wasi_webgpu_webgpu_method_record_option_gpu_size64_add(limits_wasi_borrow, &str, &val);                        \
     }
 #define ADD_LIMIT_U64(field, name)                                                                                     \
     if (limits_native->field != WGPU_LIMIT_U64_UNDEFINED) {                                                            \
-        imports_string_t str = {.ptr = (uint8_t*)name, .len = strlen(name)};                                           \
+        imports_string_t str = {};                                                                                     \
+        imports_string_dup(&str, name);                                                                                \
         uint64_t val = (uint64_t)limits_native->field;                                                                 \
         wasi_webgpu_webgpu_method_record_option_gpu_size64_add(limits_wasi_borrow, &str, &val);                        \
     }
