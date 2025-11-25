@@ -203,7 +203,7 @@ WGPUFuture wgpuAdapterRequestDevice(
         callbackInfo.userdata1,
         callbackInfo.userdata2
     );
-    return (WGPUFuture){.id = -1};
+    return (WGPUFuture){.id = 0};
 }
 
 void wgpuAdapterAddRef(WGPUAdapter adapter) {
@@ -354,7 +354,7 @@ WGPUFuture wgpuBufferMapAsync(
     callbackInfo
         .callback(WGPUMapAsyncStatus_Success, WGPU_STRING_VIEW_INIT, callbackInfo.userdata1, callbackInfo.userdata2);
 
-    return (WGPUFuture){.id = -1};
+    return (WGPUFuture){.id = 0};
 }
 
 // WGPUStatus wgpuBufferReadMappedRange(WGPUBuffer buffer, size_t offset, void* data, size_t size)
@@ -1122,7 +1122,7 @@ WGPUFuture wgpuInstanceRequestAdapter(
         callbackInfo.userdata1,
         callbackInfo.userdata2
     );
-    return (WGPUFuture){.id = -1};
+    return (WGPUFuture){.id = 0};
 }
 
 WGPUWaitStatus
