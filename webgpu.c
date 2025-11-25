@@ -462,7 +462,7 @@ wgpuCommandEncoderBeginComputePass(WGPUCommandEncoder commandEncoder, WGPUComput
                 writes_wasi->beginning_of_pass_write_index.val = writesNative->beginningOfPassWriteIndex;
             }
             writes_wasi->end_of_pass_write_index.is_some =
-                writesNative->endOfPassWriteIndex == WGPU_QUERY_SET_INDEX_UNDEFINED;
+                writesNative->endOfPassWriteIndex != WGPU_QUERY_SET_INDEX_UNDEFINED;
             if (writes_wasi->end_of_pass_write_index.is_some) {
                 writes_wasi->end_of_pass_write_index.val = writesNative->endOfPassWriteIndex;
             }
