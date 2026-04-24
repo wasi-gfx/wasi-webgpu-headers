@@ -101,16 +101,16 @@ typedef struct WGPUTextureViewImpl {
     uint32_t refCount;
 } WGPUTextureViewImpl;
 
-imports_string_t stringNativeToWasi(WGPUStringView const* label);
-imports_option_string_t optionalStringNativeToWasi(WGPUStringView const* label);
-imports_option_string_t featureLevelNativeToWasi(WGPUFeatureLevel featureLevel);
-wasi_webgpu_webgpu_option_gpu_power_preference_t powerPreferenceNativeToWasi(WGPUPowerPreference powerPreference);
-wasi_webgpu_webgpu_gpu_feature_name_t featureNativeToWasi(WGPUFeatureName const feature);
-imports_string_t featureNativeToWasiString(WGPUFeatureName const feature);
-WGPUFeatureName featureWasiToNative(wasi_webgpu_webgpu_gpu_feature_name_t const feature);
-wasi_webgpu_webgpu_option_own_record_option_gpu_size64_t limitsNativeToWasi(WGPULimits const* limits_native);
-wasi_webgpu_webgpu_gpu_buffer_map_state_t bufferMapStateNativeToWasi(WGPUBufferMapState const bufferMapState);
-WGPUBufferMapState bufferMapStateWasiToNative(wasi_webgpu_webgpu_gpu_buffer_map_state_t const buffer_map_state);
+static imports_string_t stringNativeToWasi(WGPUStringView const* label);
+static imports_option_string_t optionalStringNativeToWasi(WGPUStringView const* label);
+static imports_option_string_t featureLevelNativeToWasi(WGPUFeatureLevel featureLevel);
+static wasi_webgpu_webgpu_option_gpu_power_preference_t powerPreferenceNativeToWasi(WGPUPowerPreference powerPreference);
+static wasi_webgpu_webgpu_gpu_feature_name_t featureNativeToWasi(WGPUFeatureName const feature);
+static imports_string_t featureNativeToWasiString(WGPUFeatureName const feature);
+static WGPUFeatureName featureWasiToNative(wasi_webgpu_webgpu_gpu_feature_name_t const feature);
+static wasi_webgpu_webgpu_option_own_record_option_gpu_size64_t limitsNativeToWasi(WGPULimits const* limits_native);
+static wasi_webgpu_webgpu_gpu_buffer_map_state_t bufferMapStateNativeToWasi(WGPUBufferMapState const bufferMapState);
+static WGPUBufferMapState bufferMapStateWasiToNative(wasi_webgpu_webgpu_gpu_buffer_map_state_t const buffer_map_state);
 
 WGPUInstance wgpuCreateInstance(WGPUInstanceDescriptor const* descriptor) {
     WGPUInstanceImpl* instance = malloc(sizeof(WGPUInstanceImpl));
@@ -1665,7 +1665,7 @@ void wgpuTextureViewRelease(WGPUTextureView textureView) {
     }
 }
 
-imports_option_string_t optionalStringNativeToWasi(WGPUStringView const* stringNative) {
+static imports_option_string_t optionalStringNativeToWasi(WGPUStringView const* stringNative) {
     imports_option_string_t string_wasi = {};
     if (!stringNative || !stringNative->data) return string_wasi;
 
@@ -1678,7 +1678,7 @@ imports_option_string_t optionalStringNativeToWasi(WGPUStringView const* stringN
     return string_wasi;
 }
 
-imports_string_t stringNativeToWasi(WGPUStringView const* stringNative) {
+static imports_string_t stringNativeToWasi(WGPUStringView const* stringNative) {
     if (!stringNative || !stringNative->data) unreachable();
 
     imports_string_t string_wasi = {};
@@ -1689,7 +1689,7 @@ imports_string_t stringNativeToWasi(WGPUStringView const* stringNative) {
     return string_wasi;
 }
 
-wasi_webgpu_webgpu_gpu_buffer_map_state_t bufferMapStateNativeToWasi(WGPUBufferMapState const bufferMapState) {
+static wasi_webgpu_webgpu_gpu_buffer_map_state_t bufferMapStateNativeToWasi(WGPUBufferMapState const bufferMapState) {
     switch (bufferMapState) {
     case WGPUBufferMapState_Unmapped:
         return WASI_WEBGPU_WEBGPU_GPU_BUFFER_MAP_STATE_UNMAPPED;
@@ -1702,7 +1702,7 @@ wasi_webgpu_webgpu_gpu_buffer_map_state_t bufferMapStateNativeToWasi(WGPUBufferM
     }
 }
 
-WGPUBufferMapState bufferMapStateWasiToNative(wasi_webgpu_webgpu_gpu_buffer_map_state_t const buffer_map_state) {
+static WGPUBufferMapState bufferMapStateWasiToNative(wasi_webgpu_webgpu_gpu_buffer_map_state_t const buffer_map_state) {
     switch (buffer_map_state) {
     case WASI_WEBGPU_WEBGPU_GPU_BUFFER_MAP_STATE_UNMAPPED:
         return WGPUBufferMapState_Unmapped;
@@ -1715,7 +1715,7 @@ WGPUBufferMapState bufferMapStateWasiToNative(wasi_webgpu_webgpu_gpu_buffer_map_
     }
 }
 
-imports_option_string_t featureLevelNativeToWasi(WGPUFeatureLevel featureLevel) {
+static imports_option_string_t featureLevelNativeToWasi(WGPUFeatureLevel featureLevel) {
     imports_option_string_t output = {};
     if (featureLevel == WGPUFeatureLevel_Undefined) {
         return output;
@@ -1735,7 +1735,7 @@ imports_option_string_t featureLevelNativeToWasi(WGPUFeatureLevel featureLevel) 
     return output;
 }
 
-wasi_webgpu_webgpu_option_gpu_power_preference_t powerPreferenceNativeToWasi(WGPUPowerPreference powerPreference) {
+static wasi_webgpu_webgpu_option_gpu_power_preference_t powerPreferenceNativeToWasi(WGPUPowerPreference powerPreference) {
     wasi_webgpu_webgpu_option_gpu_power_preference_t output = {};
     if (powerPreference == WGPUPowerPreference_Undefined) {
         return output;
@@ -1755,7 +1755,7 @@ wasi_webgpu_webgpu_option_gpu_power_preference_t powerPreferenceNativeToWasi(WGP
     return output;
 }
 
-wasi_webgpu_webgpu_gpu_feature_name_t featureNativeToWasi(WGPUFeatureName const feature) {
+static wasi_webgpu_webgpu_gpu_feature_name_t featureNativeToWasi(WGPUFeatureName const feature) {
     switch (feature) {
     case WGPUFeatureName_DepthClipControl:
         return WASI_WEBGPU_WEBGPU_GPU_FEATURE_NAME_DEPTH_CLIP_CONTROL;
@@ -1798,7 +1798,7 @@ wasi_webgpu_webgpu_gpu_feature_name_t featureNativeToWasi(WGPUFeatureName const 
 
 // needed while feature checking is done with strings
 // spec might change https://github.com/WebAssembly/wasi-gfx/issues/58
-imports_string_t featureNativeToWasiString(WGPUFeatureName const feature) {
+static imports_string_t featureNativeToWasiString(WGPUFeatureName const feature) {
     imports_string_t output = {};
 
     switch (feature) {
@@ -1860,7 +1860,7 @@ imports_string_t featureNativeToWasiString(WGPUFeatureName const feature) {
     return output;
 }
 
-WGPUFeatureName featureWasiToNative(wasi_webgpu_webgpu_gpu_feature_name_t const feature) {
+static WGPUFeatureName featureWasiToNative(wasi_webgpu_webgpu_gpu_feature_name_t const feature) {
     switch (feature) {
     case WASI_WEBGPU_WEBGPU_GPU_FEATURE_NAME_DEPTH_CLIP_CONTROL:
         return WGPUFeatureName_DepthClipControl;
@@ -1901,7 +1901,7 @@ WGPUFeatureName featureWasiToNative(wasi_webgpu_webgpu_gpu_feature_name_t const 
     }
 }
 
-wasi_webgpu_webgpu_option_own_record_option_gpu_size64_t limitsNativeToWasi(WGPULimits const* limits_native) {
+static wasi_webgpu_webgpu_option_own_record_option_gpu_size64_t limitsNativeToWasi(WGPULimits const* limits_native) {
 #define ADD_LIMIT_U32(field, name)                                                                                     \
     if (limits_native->field != WGPU_LIMIT_U32_UNDEFINED) {                                                            \
         imports_string_t str = {};                                                                                     \
