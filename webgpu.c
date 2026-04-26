@@ -210,12 +210,10 @@ WGPUFuture wgpuAdapterRequestDevice(
 
     wasi_webgpu_webgpu_gpu_device_descriptor_free(&descriptor_wasi);
 
-    // WGPU_STRING_VIEW_INIT = {NULL, SIZE_MAX} — crashes ORT's StringViewAdapter.
-    static const WGPUStringView empty_msg = {.data = "", .length = 0};
     callbackInfo.callback(
         WGPURequestDeviceStatus_Success,
         device,
-        empty_msg,
+        WGPU_STRING_VIEW_INIT,
         callbackInfo.userdata1,
         callbackInfo.userdata2
     );
@@ -372,9 +370,8 @@ WGPUFuture wgpuBufferMapAsync(
         todo();
     }
 
-    static const WGPUStringView empty_msg_map = {.data = "", .length = 0};
     callbackInfo
-        .callback(WGPUMapAsyncStatus_Success, empty_msg_map, callbackInfo.userdata1, callbackInfo.userdata2);
+        .callback(WGPUMapAsyncStatus_Success, WGPU_STRING_VIEW_INIT, callbackInfo.userdata1, callbackInfo.userdata2);
 
     return (WGPUFuture){.id = 0};
 }
@@ -1253,13 +1250,10 @@ WGPUFuture wgpuDevicePopErrorScope(WGPUDevice device, WGPUPopErrorScopeCallbackI
     }
 
     if (!wasi_popped_error.is_some) {
-        // WGPU_STRING_VIEW_INIT = {NULL, SIZE_MAX} — StringViewAdapter in ORT
-        // treats SIZE_MAX length as a crash. Use an explicit empty string instead.
-        static const WGPUStringView empty_msg = {.data = "", .length = 0};
         callbackInfo.callback(
             WGPUPopErrorScopeStatus_Success,
             WGPUErrorType_NoError,
-            empty_msg,
+            WGPU_STRING_VIEW_INIT,
             callbackInfo.userdata1,
             callbackInfo.userdata2
         );
@@ -1394,11 +1388,10 @@ WGPUFuture wgpuInstanceRequestAdapter(
 
     wasi_webgpu_webgpu_gpu_request_adapter_options_free(&wasi_options);
 
-    static const WGPUStringView empty_msg_adapter = {.data = "", .length = 0};
     callbackInfo.callback(
         WGPURequestAdapterStatus_Success,
         adapter,
-        empty_msg_adapter,
+        WGPU_STRING_VIEW_INIT,
         callbackInfo.userdata1,
         callbackInfo.userdata2
     );
@@ -1850,10 +1843,9 @@ void wgpuSupportedFeaturesFreeMembers(WGPUSupportedFeatures supportedFeatures) {
 // {
 // }
 
-void wgpuSurfaceRelease(WGPUSurface surface)
-{
-    (void)surface;
-}
+// void wgpuSurfaceRelease(WGPUSurface surface)
+// {
+// }
 
 // void wgpuSurfaceCapabilitiesFreeMembers(WGPUSurfaceCapabilities surfaceCapabilities)
 // {
