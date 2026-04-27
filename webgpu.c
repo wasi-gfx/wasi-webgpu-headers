@@ -198,17 +198,26 @@ WGPUFuture wgpuAdapterRequestDevice(
         &err
     );
 
+    wasi_webgpu_webgpu_gpu_device_descriptor_free(&descriptor_wasi);
+
     if (!success) {
+        WGPUStringView request_device_error_message = stringWasiToNative(&err.message);
+        callbackInfo.callback(
+            WGPURequestDeviceStatus_Error,
+            NULL,
+            request_device_error_message,
+            callbackInfo.userdata1,
+            callbackInfo.userdata2
+        );
+        free((void*)request_device_error_message.data);
         wasi_webgpu_webgpu_request_device_error_free(&err);
-        todo();
+        return (WGPUFuture){.id = 0};
     }
 
     WGPUDeviceImpl* device = malloc(sizeof(WGPUDeviceImpl));
     if (!device) oom();
     device->refCount = 1;
     device->device = wasi_device;
-
-    wasi_webgpu_webgpu_gpu_device_descriptor_free(&descriptor_wasi);
 
     callbackInfo.callback(
         WGPURequestDeviceStatus_Success,
@@ -366,8 +375,33 @@ WGPUFuture wgpuBufferMapAsync(
     );
 
     if (!success) {
+        WGPUMapAsyncStatus status;
+        switch (err.kind.tag) {
+        case WASI_WEBGPU_WEBGPU_MAP_ASYNC_ERROR_KIND_OPERATION_ERROR:
+            // webgpu.h doesn't have operation errors
+            status = WGPUMapAsyncStatus_Error;
+            break;
+        case WASI_WEBGPU_WEBGPU_MAP_ASYNC_ERROR_KIND_RANGE_ERROR:
+            // webgpu.h doesn't have range errors
+            status = WGPUMapAsyncStatus_Error;
+            break;
+        case WASI_WEBGPU_WEBGPU_MAP_ASYNC_ERROR_KIND_ABORT_ERROR:
+            status = WGPUMapAsyncStatus_Aborted;
+            break;
+        default:
+            status = WGPUMapAsyncStatus_Error;
+            break;
+        }
+        WGPUStringView map_async_error_message = stringWasiToNative(&err.message);
+        callbackInfo.callback(
+            status,
+            map_async_error_message,
+            callbackInfo.userdata1,
+            callbackInfo.userdata2
+        );
+        free((void*)map_async_error_message.data);
         wasi_webgpu_webgpu_map_async_error_free(&err);
-        todo();
+        return (WGPUFuture){.id = 0};
     }
 
     callbackInfo
@@ -1377,16 +1411,23 @@ WGPUFuture wgpuInstanceRequestAdapter(
         &wasi_adapter
     );
 
+    wasi_webgpu_webgpu_gpu_request_adapter_options_free(&wasi_options);
+
     if (!success) {
-        todo();
+        callbackInfo.callback(
+            WGPURequestAdapterStatus_Unavailable,
+            NULL,
+            WGPU_STRING_VIEW_INIT,
+            callbackInfo.userdata1,
+            callbackInfo.userdata2
+        );
+        return (WGPUFuture){.id = 0};
     }
 
     WGPUAdapterImpl* adapter = malloc(sizeof(WGPUAdapterImpl));
     if (!adapter) oom();
     adapter->refCount = 1;
     adapter->adapter = wasi_adapter;
-
-    wasi_webgpu_webgpu_gpu_request_adapter_options_free(&wasi_options);
 
     callbackInfo.callback(
         WGPURequestAdapterStatus_Success,
