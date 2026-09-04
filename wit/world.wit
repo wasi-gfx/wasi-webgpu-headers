@@ -1,7 +1,12 @@
 package wasi-gfx:webgpu-headers;
 
 world imports {
-    include wasi:webgpu/imports@0.0.1;
-    include wasi:surface/imports@0.0.1;
-    include wasi:graphics-context/imports@0.0.1;
+    import wasi:webgpu/webgpu@0.3.0-rc.2;
+    import wasi-gfx:surface/surface@0.2.0;
+    import wasi-gfx:surface/surface-webgpu@0.2.0;
+}
+
+world example {
+    include imports;
+    export wasi:cli/run@0.3.0;
 }

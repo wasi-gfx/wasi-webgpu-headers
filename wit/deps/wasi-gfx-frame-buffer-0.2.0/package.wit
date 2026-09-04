@@ -1,0 +1,9 @@
+package wasi-gfx:frame-buffer@0.2.0;
+
+interface frame-buffer {
+  resource buffer {
+    get-with-copy: func() -> list<u8>;
+    set-with-copy: func(val: list<u8>);
+  }
+}
+
