@@ -3,7 +3,7 @@ wasi-webgpu implementation of [webgpu native headers](https://github.com/webgpu-
 
 ## Install wit dependencies
 ```shell
-wkg wit fetch
+wkg fetch --config ./wkg-config.toml
 ```
 
 ## Generate wit bindings
