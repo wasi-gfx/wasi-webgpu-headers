@@ -2277,6 +2277,19 @@ static wasi_webgpu_webgpu_gpu_feature_name_t featureNativeToWasi(WGPUFeatureName
         return WASI_WEBGPU_WEBGPU_GPU_FEATURE_NAME_DUAL_SOURCE_BLENDING;
     case WGPUFeatureName_Subgroups:
         return WASI_WEBGPU_WEBGPU_GPU_FEATURE_NAME_SUBGROUPS;
+    case WGPUFeatureName_CoreFeaturesAndLimits:
+        return WASI_WEBGPU_WEBGPU_GPU_FEATURE_NAME_CORE_FEATURES_AND_LIMITS;
+    case WGPUFeatureName_TextureFormatsTier1:
+        return WASI_WEBGPU_WEBGPU_GPU_FEATURE_NAME_TEXTURE_FORMATS_TIER1;
+    case WGPUFeatureName_TextureFormatsTier2:
+        return WASI_WEBGPU_WEBGPU_GPU_FEATURE_NAME_TEXTURE_FORMATS_TIER2;
+    case WGPUFeatureName_PrimitiveIndex:
+        return WASI_WEBGPU_WEBGPU_GPU_FEATURE_NAME_PRIMITIVE_INDEX;
+    case WGPUFeatureName_TextureComponentSwizzle:
+        return WASI_WEBGPU_WEBGPU_GPU_FEATURE_NAME_TEXTURE_COMPONENT_SWIZZLE;
+    case WGPUFeatureName_SubgroupSizeControl:
+        // not in webgpu.h yet
+        todo();
     default:
         unreachable();
     }
@@ -2339,6 +2352,24 @@ static imports_string_t featureNativeToWasiString(WGPUFeatureName const feature)
     case WGPUFeatureName_Subgroups:
         imports_string_dup(&output, "subgroups");
         break;
+    case WGPUFeatureName_CoreFeaturesAndLimits:
+        imports_string_dup(&output, "core-features-and-limits");
+        break;
+    case WGPUFeatureName_TextureFormatsTier1:
+        imports_string_dup(&output, "texture-formats-tier1");
+        break;
+    case WGPUFeatureName_TextureFormatsTier2:
+        imports_string_dup(&output, "texture-formats-tier2");
+        break;
+    case WGPUFeatureName_PrimitiveIndex:
+        imports_string_dup(&output, "primitive-index");
+        break;
+    case WGPUFeatureName_TextureComponentSwizzle:
+        imports_string_dup(&output, "texture-component-swizzle");
+        break;
+    case WGPUFeatureName_SubgroupSizeControl:
+        // not in webgpu.h yet
+        todo();
     default:
         unreachable();
     }
@@ -2384,8 +2415,18 @@ static WGPUFeatureName featureWasiToNative(wasi_webgpu_webgpu_gpu_feature_name_t
         return WGPUFeatureName_DualSourceBlending;
     case WASI_WEBGPU_WEBGPU_GPU_FEATURE_NAME_SUBGROUPS:
         return WGPUFeatureName_Subgroups;
+    case WASI_WEBGPU_WEBGPU_GPU_FEATURE_NAME_CORE_FEATURES_AND_LIMITS:
+        return WGPUFeatureName_CoreFeaturesAndLimits;
+    case WASI_WEBGPU_WEBGPU_GPU_FEATURE_NAME_TEXTURE_FORMATS_TIER1:
+        return WGPUFeatureName_TextureFormatsTier1;
+    case WASI_WEBGPU_WEBGPU_GPU_FEATURE_NAME_TEXTURE_FORMATS_TIER2:
+        return WGPUFeatureName_TextureFormatsTier2;
+    case WASI_WEBGPU_WEBGPU_GPU_FEATURE_NAME_PRIMITIVE_INDEX:
+        return WGPUFeatureName_PrimitiveIndex;
+    case WASI_WEBGPU_WEBGPU_GPU_FEATURE_NAME_TEXTURE_COMPONENT_SWIZZLE:
+        return WGPUFeatureName_TextureComponentSwizzle;
     default:
-        return WGPUFeatureName_Undefined;
+        unreachable();
     }
 }
 
@@ -2446,6 +2487,7 @@ static wasi_webgpu_webgpu_option_own_record_option_gpu_size64_t limitsNativeToWa
     ADD_LIMIT_U32(maxComputeWorkgroupSizeY, "max-compute-workgroup-size-y");
     ADD_LIMIT_U32(maxComputeWorkgroupSizeZ, "max-compute-workgroup-size-z");
     ADD_LIMIT_U32(maxComputeWorkgroupsPerDimension, "max-compute-workgroups-per-dimension");
+    ADD_LIMIT_U32(maxImmediateSize, "max-immediate-size");
 
     return output;
 }
@@ -2484,4 +2526,5 @@ static void limitsWasiToNative(wasi_webgpu_webgpu_own_gpu_supported_limits_t was
     limits->maxComputeWorkgroupSizeY = wasi_webgpu_webgpu_method_gpu_supported_limits_max_compute_workgroup_size_y(wasi_limits_borrow);
     limits->maxComputeWorkgroupSizeZ = wasi_webgpu_webgpu_method_gpu_supported_limits_max_compute_workgroup_size_z(wasi_limits_borrow);
     limits->maxComputeWorkgroupsPerDimension = wasi_webgpu_webgpu_method_gpu_supported_limits_max_compute_workgroups_per_dimension(wasi_limits_borrow);
+    limits->maxImmediateSize = wasi_webgpu_webgpu_method_gpu_supported_limits_max_immediate_size(wasi_limits_borrow);
 }
