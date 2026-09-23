@@ -2056,9 +2056,10 @@ void wgpuSupportedFeaturesFreeMembers(WGPUSupportedFeatures supportedFeatures) {
 // {
 // }
 
-// void wgpuSurfaceRelease(WGPUSurface surface)
-// {
-// }
+void wgpuSurfaceRelease(WGPUSurface surface) {
+    // Defined, not commented out, because webgpu_cpp.h references it and the link fails without one.
+    todo();
+}
 
 // void wgpuSurfaceCapabilitiesFreeMembers(WGPUSurfaceCapabilities surfaceCapabilities)
 // {
