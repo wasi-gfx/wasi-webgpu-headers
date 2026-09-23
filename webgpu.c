@@ -1684,9 +1684,38 @@ void wgpuQuerySetRelease(WGPUQuerySet querySet) {
     }
 }
 
-// WGPUFuture wgpuQueueOnSubmittedWorkDone(WGPUQueue queue, WGPUQueueWorkDoneCallbackInfo callbackInfo)
-// {
-// }
+static void onQueueWorkDone(void* result_untyped, void* userdata) {
+    // on-submitted-work-done has no result, so completing the subtask is success
+    (void)result_untyped;
+    WGPUQueueWorkDoneCallbackInfo cb = *(WGPUQueueWorkDoneCallbackInfo*)userdata;
+    cb.callback(WGPUQueueWorkDoneStatus_Success, WGPU_STRING_VIEW_INIT, cb.userdata1, cb.userdata2);
+}
+
+static uint32_t callQueueOnSubmittedWorkDone(void* args, void* result) {
+    (void)result;
+    return wasi_webgpu_webgpu_method_gpu_queue_on_submitted_work_done(
+        *(wasi_webgpu_webgpu_borrow_gpu_queue_t*)args);
+}
+
+WGPUFuture wgpuQueueOnSubmittedWorkDone(WGPUQueue queue, WGPUQueueWorkDoneCallbackInfo callbackInfo) {
+    if (!queue) unreachable();
+    validateCallbackMode(callbackInfo.mode);
+
+    WGPUQueueWorkDoneCallbackInfo* cb = malloc(sizeof *cb);
+    if (!cb) oom();
+    *cb = callbackInfo;
+
+    // args is just the handle to the queue since that's all on_submitted_work_done takes
+    wasi_webgpu_webgpu_borrow_gpu_queue_t args = wasi_webgpu_webgpu_borrow_gpu_queue(queue->queue);
+    return (WGPUFuture){.id = async_call((async_call_desc){
+        .call = &callQueueOnSubmittedWorkDone,
+        .args = &args,
+        .args_size = sizeof args,
+        .on_done = &onQueueWorkDone,
+        .userdata = cb,
+        .tag = (uint32_t)callbackInfo.mode,
+    })};
+}
 
 // void wgpuQueueSetLabel(WGPUQueue queue, WGPUStringView label)
 // {
