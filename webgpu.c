@@ -54,6 +54,8 @@ typedef struct WGPUDeviceImpl {
 typedef struct WGPUInstanceImpl {
     wasi_webgpu_webgpu_own_gpu_t gpu;
     uint32_t refCount;
+    wasi_webgpu_webgpu_own_wgsl_language_features_t wgslFeatures;
+    bool hasWgslFeatures;
 } WGPUInstanceImpl;
 typedef struct WGPUPipelineLayoutImpl {
     wasi_webgpu_webgpu_own_gpu_pipeline_layout_t pipeline_layout;
@@ -139,6 +141,7 @@ WGPUInstance wgpuCreateInstance(WGPUInstanceDescriptor const* descriptor) {
     if (!instance) oom();
     instance->refCount = 1;
     instance->gpu = wasi_webgpu_webgpu_get_gpu();
+    instance->hasWgslFeatures = false;
     g_instanceLive = true;
     return instance;
 }
@@ -1422,9 +1425,74 @@ void wgpuDeviceRelease(WGPUDevice device) {
 // {
 // }
 
-// WGPUBool wgpuInstanceHasWGSLLanguageFeature(WGPUInstance instance, WGPUWGSLLanguageFeatureName feature)
-// {
-// }
+WGPUBool wgpuInstanceHasWGSLLanguageFeature(WGPUInstance instance, WGPUWGSLLanguageFeatureName feature) {
+    if (!instance) unreachable();
+
+    const char* name;
+    switch (feature) {
+    case WGPUWGSLLanguageFeatureName_ReadonlyAndReadwriteStorageTextures:
+        name = "readonly_and_readwrite_storage_textures";
+        break;
+    case WGPUWGSLLanguageFeatureName_Packed4x8IntegerDotProduct:
+        name = "packed_4x8_integer_dot_product";
+        break;
+    case WGPUWGSLLanguageFeatureName_UnrestrictedPointerParameters:
+        name = "unrestricted_pointer_parameters";
+        break;
+    case WGPUWGSLLanguageFeatureName_PointerCompositeAccess:
+        name = "pointer_composite_access";
+        break;
+    case WGPUWGSLLanguageFeatureName_UniformBufferStandardLayout:
+        name = "uniform_buffer_standard_layout";
+        break;
+    case WGPUWGSLLanguageFeatureName_SubgroupId:
+        name = "subgroup_id";
+        break;
+    case WGPUWGSLLanguageFeatureName_SubgroupUniformity:
+        name = "subgroup_uniformity";
+        break;
+    case WGPUWGSLLanguageFeatureName_TextureAndSamplerLet:
+        name = "texture_and_sampler_let";
+        break;
+    case WGPUWGSLLanguageFeatureName_TextureFormatsTier1:
+        name = "texture_formats_tier1";
+        break;
+    case WGPUWGSLLanguageFeatureName_LinearIndexing:
+        name = "linear_indexing";
+        break;
+    case WGPUWGSLLanguageFeatureName_ImmediateAddressSpace:
+        name = "immediate_address_space";
+        break;
+    case WGPUWGSLLanguageFeatureName_FragmentDepth:
+        name = "fragment_depth";
+        break;
+    case WGPUWGSLLanguageFeatureName_BufferView:
+        name = "buffer_view";
+        break;
+    case WGPUWGSLLanguageFeatureName_SwizzleAssignment:
+        name = "swizzle_assignment";
+        break;
+    // TODO: enable once added to webgpu.h
+    // case WGPUWGSLLanguageFeatureName_AtomicVec2uMinMax:
+    //     name = "atomic_vec2u_min_max";
+    //     break;
+    default:
+        // Not supported by wasi:webgpu
+        return false;
+    }
+
+    if (!instance->hasWgslFeatures) {
+        instance->wgslFeatures =
+            wasi_webgpu_webgpu_method_gpu_wgsl_language_features(wasi_webgpu_webgpu_borrow_gpu(instance->gpu));
+        instance->hasWgslFeatures = true;
+    }
+
+    imports_string_t name_wasi = {.ptr = (uint8_t*)name, .len = strlen(name)};
+    return wasi_webgpu_webgpu_method_wgsl_language_features_has(
+        wasi_webgpu_webgpu_borrow_wgsl_language_features(instance->wgslFeatures),
+        &name_wasi
+    );
+}
 
 // every operation registers its WGPUCallbackMode as its dispatch tag
 static bool mayDispatchProcessEvents(async_future_t id, uint32_t tag, void* ctx) {
@@ -1577,6 +1645,7 @@ void wgpuInstanceRelease(WGPUInstance instance) {
     if (instance->refCount == 0) {
         // TODO: fire the leftovers with *_CallbackCancelled instead of aborting
         if (async_pending_count() > 0) abort();
+        if (instance->hasWgslFeatures) wasi_webgpu_webgpu_wgsl_language_features_drop_own(instance->wgslFeatures);
         wasi_webgpu_webgpu_gpu_drop_own(instance->gpu);
         free(instance);
         g_instanceLive = false;
