@@ -104,6 +104,7 @@ typedef struct WGPUTextureViewImpl {
     uint32_t refCount;
 } WGPUTextureViewImpl;
 
+static void adapterInfoWasiToNative(wasi_webgpu_webgpu_own_gpu_adapter_info_t info_wasi, WGPUAdapterInfo* info);
 static imports_string_t stringNativeToWasi(WGPUStringView const* label);
 static imports_option_string_t optionalStringNativeToWasi(WGPUStringView const* label);
 static WGPUStringView stringWasiToNative(imports_string_t const* string_wasi);
@@ -158,9 +159,14 @@ WGPUInstance wgpuCreateInstance(WGPUInstanceDescriptor const* descriptor) {
 // {
 // }
 
-// WGPUStatus wgpuAdapterGetInfo(WGPUAdapter adapter, WGPUAdapterInfo* info)
-// {
-// }
+WGPUStatus wgpuAdapterGetInfo(WGPUAdapter adapter, WGPUAdapterInfo* info) {
+    if (!adapter || !info) unreachable();
+    adapterInfoWasiToNative(
+        wasi_webgpu_webgpu_method_gpu_adapter_info(wasi_webgpu_webgpu_borrow_gpu_adapter(adapter->adapter)),
+        info
+    );
+    return WGPUStatus_Success;
+}
 
 WGPUStatus wgpuAdapterGetLimits(WGPUAdapter adapter, WGPULimits* limits) {
     if (!adapter || !limits) unreachable();
@@ -1188,35 +1194,10 @@ void wgpuDeviceDestroy(WGPUDevice device) {
 
 WGPUStatus wgpuDeviceGetAdapterInfo(WGPUDevice device, WGPUAdapterInfo* adapterInfo) {
     if (!device || !adapterInfo) unreachable();
-    wasi_webgpu_webgpu_own_gpu_adapter_info_t wasi_info =
-        wasi_webgpu_webgpu_method_gpu_device_adapter_info(wasi_webgpu_webgpu_borrow_gpu_device(device->device));
-    wasi_webgpu_webgpu_borrow_gpu_adapter_info_t wasi_info_borrow = wasi_webgpu_webgpu_borrow_gpu_adapter_info(wasi_info);
-
-    *adapterInfo = WGPU_ADAPTER_INFO_INIT;
-    adapterInfo->subgroupMinSize = wasi_webgpu_webgpu_method_gpu_adapter_info_subgroup_min_size(wasi_info_borrow);
-    adapterInfo->subgroupMaxSize = wasi_webgpu_webgpu_method_gpu_adapter_info_subgroup_max_size(wasi_info_borrow);
-
-    imports_string_t wasi_info_vendor;
-    wasi_webgpu_webgpu_method_gpu_adapter_info_vendor(wasi_info_borrow, &wasi_info_vendor);
-    adapterInfo->vendor = stringWasiToNative(&wasi_info_vendor);
-    imports_string_free(&wasi_info_vendor);
-
-    imports_string_t wasi_info_architecture;
-    wasi_webgpu_webgpu_method_gpu_adapter_info_architecture(wasi_info_borrow, &wasi_info_architecture);
-    adapterInfo->architecture = stringWasiToNative(&wasi_info_architecture);
-    imports_string_free(&wasi_info_architecture);
-
-    imports_string_t wasi_info_device;
-    wasi_webgpu_webgpu_method_gpu_adapter_info_device(wasi_info_borrow, &wasi_info_device);
-    adapterInfo->device = stringWasiToNative(&wasi_info_device);
-    imports_string_free(&wasi_info_device);
-
-    imports_string_t wasi_info_description;
-    wasi_webgpu_webgpu_method_gpu_adapter_info_description(wasi_info_borrow, &wasi_info_description);
-    adapterInfo->description = stringWasiToNative(&wasi_info_description);
-    imports_string_free(&wasi_info_description);
-
-    wasi_webgpu_webgpu_gpu_adapter_info_drop_own(wasi_info);
+    adapterInfoWasiToNative(
+        wasi_webgpu_webgpu_method_gpu_device_adapter_info(wasi_webgpu_webgpu_borrow_gpu_device(device->device)),
+        adapterInfo
+    );
     return WGPUStatus_Success;
 }
 
@@ -2159,6 +2140,33 @@ void wgpuTextureViewRelease(WGPUTextureView textureView) {
         wasi_webgpu_webgpu_gpu_texture_view_drop_own(textureView->texture_view);
         free(textureView);
     }
+}
+
+static void adapterInfoWasiToNative(wasi_webgpu_webgpu_own_gpu_adapter_info_t info_wasi, WGPUAdapterInfo* info) {
+    wasi_webgpu_webgpu_borrow_gpu_adapter_info_t info_borrow =
+        wasi_webgpu_webgpu_borrow_gpu_adapter_info(info_wasi);
+
+    // defaults for fields wasi:webgpu doesn't expose
+    *info = WGPU_ADAPTER_INFO_INIT;
+
+    imports_string_t s;
+    wasi_webgpu_webgpu_method_gpu_adapter_info_vendor(info_borrow, &s);
+    info->vendor = stringWasiToNative(&s);
+    imports_string_free(&s);
+    wasi_webgpu_webgpu_method_gpu_adapter_info_architecture(info_borrow, &s);
+    info->architecture = stringWasiToNative(&s);
+    imports_string_free(&s);
+    wasi_webgpu_webgpu_method_gpu_adapter_info_device(info_borrow, &s);
+    info->device = stringWasiToNative(&s);
+    imports_string_free(&s);
+    wasi_webgpu_webgpu_method_gpu_adapter_info_description(info_borrow, &s);
+    info->description = stringWasiToNative(&s);
+    imports_string_free(&s);
+
+    info->subgroupMinSize = wasi_webgpu_webgpu_method_gpu_adapter_info_subgroup_min_size(info_borrow);
+    info->subgroupMaxSize = wasi_webgpu_webgpu_method_gpu_adapter_info_subgroup_max_size(info_borrow);
+
+    wasi_webgpu_webgpu_gpu_adapter_info_drop_own(info_wasi);
 }
 
 static imports_option_string_t optionalStringNativeToWasi(WGPUStringView const* stringNative) {
