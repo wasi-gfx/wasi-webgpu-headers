@@ -178,6 +178,7 @@ WGPUStatus wgpuAdapterGetLimits(WGPUAdapter adapter, WGPULimits* limits) {
 }
 
 WGPUBool wgpuAdapterHasFeature(WGPUAdapter adapter, WGPUFeatureName feature) {
+    if (!adapter) unreachable();
     imports_string_t feature_wasi_string = featureNativeToWasiString(feature);
     wasi_webgpu_webgpu_own_gpu_supported_features_t available_features =
         wasi_webgpu_webgpu_method_gpu_adapter_features(wasi_webgpu_webgpu_borrow_gpu_adapter(adapter->adapter));
@@ -1273,6 +1274,7 @@ WGPUQueue wgpuDeviceGetQueue(WGPUDevice device) {
 }
 
 WGPUBool wgpuDeviceHasFeature(WGPUDevice device, WGPUFeatureName feature) {
+    if (!device) unreachable();
     imports_string_t feature_wasi_string = featureNativeToWasiString(feature);
     wasi_webgpu_webgpu_own_gpu_supported_features_t available_features =
         wasi_webgpu_webgpu_method_gpu_device_features(wasi_webgpu_webgpu_borrow_gpu_device(device->device));
