@@ -2475,8 +2475,8 @@ static imports_string_t featureNativeToWasiString(WGPUFeatureName const feature)
         imports_string_dup(&output, "texture-component-swizzle");
         break;
     case WGPUFeatureName_SubgroupSizeControl:
-        // not in webgpu.h yet
-        todo();
+        imports_string_dup(&output, "subgroup-size-control");
+        break;
     default:
         unreachable();
     }
