@@ -1373,10 +1373,13 @@ WGPUBool wgpuDeviceHasFeature(WGPUDevice device, WGPUFeatureName feature) {
     imports_string_t feature_wasi_string = featureNativeToWasiString(feature);
     wasi_webgpu_webgpu_own_gpu_supported_features_t available_features =
         wasi_webgpu_webgpu_method_gpu_device_features(wasi_webgpu_webgpu_borrow_gpu_device(device->device));
-    return wasi_webgpu_webgpu_method_gpu_supported_features_has(
+    bool has_feature = wasi_webgpu_webgpu_method_gpu_supported_features_has(
         wasi_webgpu_webgpu_borrow_gpu_supported_features(available_features),
         &feature_wasi_string
     );
+    imports_string_free(&feature_wasi_string);
+    wasi_webgpu_webgpu_gpu_supported_features_drop_own(available_features);
+    return has_feature;
 }
 
 static void onPopErrorScopeDone(void* result_untyped, void* userdata) {
