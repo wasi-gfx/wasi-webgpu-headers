@@ -591,10 +591,21 @@ wgpuCommandEncoderBeginComputePass(WGPUCommandEncoder commandEncoder, WGPUComput
 // {
 // }
 
-// void wgpuCommandEncoderClearBuffer(WGPUCommandEncoder commandEncoder, WGPUBuffer buffer, uint64_t offset, uint64_t
-// size)
-// {
-// }
+void wgpuCommandEncoderClearBuffer(
+    WGPUCommandEncoder commandEncoder,
+    WGPUBuffer buffer,
+    uint64_t offset,
+    uint64_t size
+) {
+    if (!commandEncoder || !buffer) unreachable();
+    wasi_webgpu_webgpu_method_gpu_command_encoder_clear_buffer(
+        wasi_webgpu_webgpu_borrow_gpu_command_encoder(commandEncoder->command_encoder),
+        wasi_webgpu_webgpu_borrow_gpu_buffer(buffer->buffer),
+        &offset,
+        // none means to the end of the buffer
+        size == WGPU_WHOLE_SIZE ? NULL : &size
+    );
+}
 
 void wgpuCommandEncoderCopyBufferToBuffer(
     WGPUCommandEncoder commandEncoder,
