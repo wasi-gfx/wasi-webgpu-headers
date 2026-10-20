@@ -977,9 +977,9 @@ WGPUCommandEncoder wgpuDeviceCreateCommandEncoder(WGPUDevice device, WGPUCommand
     return command_encoder_struct;
 }
 
-WGPUComputePipeline
-wgpuDeviceCreateComputePipeline(WGPUDevice device, WGPUComputePipelineDescriptor const* descriptor) {
-    if (!device || !descriptor) unreachable();
+static wasi_webgpu_webgpu_gpu_compute_pipeline_descriptor_t
+computePipelineDescriptorNativeToWasi(WGPUComputePipelineDescriptor const* descriptor) {
+    if (!descriptor->compute.module) unreachable();
 
     wasi_webgpu_webgpu_gpu_layout_mode_t layout_wasi = {};
     if (!descriptor->layout) {
@@ -1008,6 +1008,7 @@ wgpuDeviceCreateComputePipeline(WGPUDevice device, WGPUComputePipelineDescriptor
                 &key,
                 descriptor->compute.constants[i].value
             );
+            imports_string_free(&key);
         }
     }
 
@@ -1020,6 +1021,23 @@ wgpuDeviceCreateComputePipeline(WGPUDevice device, WGPUComputePipelineDescriptor
             .constants = constants_wasi,
         },
     };
+    return descriptor_wasi;
+}
+
+static WGPUComputePipeline computePipelineWasiToNative(wasi_webgpu_webgpu_own_gpu_compute_pipeline_t compute_pipeline) {
+    WGPUComputePipelineImpl* compute_pipeline_struct = malloc(sizeof(WGPUComputePipelineImpl));
+    if (!compute_pipeline_struct) oom();
+    compute_pipeline_struct->compute_pipeline = compute_pipeline;
+    compute_pipeline_struct->refCount = 1;
+    return (WGPUComputePipeline)compute_pipeline_struct;
+}
+
+WGPUComputePipeline
+wgpuDeviceCreateComputePipeline(WGPUDevice device, WGPUComputePipelineDescriptor const* descriptor) {
+    if (!device || !descriptor) unreachable();
+
+    wasi_webgpu_webgpu_gpu_compute_pipeline_descriptor_t descriptor_wasi =
+        computePipelineDescriptorNativeToWasi(descriptor);
 
     wasi_webgpu_webgpu_own_gpu_compute_pipeline_t compute_pipeline =
         wasi_webgpu_webgpu_method_gpu_device_create_compute_pipeline(
@@ -1029,17 +1047,83 @@ wgpuDeviceCreateComputePipeline(WGPUDevice device, WGPUComputePipelineDescriptor
 
     wasi_webgpu_webgpu_gpu_compute_pipeline_descriptor_free(&descriptor_wasi);
 
-    WGPUComputePipelineImpl* compute_pipeline_struct = malloc(sizeof(WGPUComputePipelineImpl));
-    if (!compute_pipeline_struct) oom();
-    compute_pipeline_struct->compute_pipeline = compute_pipeline;
-    compute_pipeline_struct->refCount = 1;
-    return (WGPUComputePipeline)compute_pipeline_struct;
+    return computePipelineWasiToNative(compute_pipeline);
 }
 
-// WGPUFuture wgpuDeviceCreateComputePipelineAsync(WGPUDevice device, WGPUComputePipelineDescriptor const* descriptor,
-//     WGPUCreateComputePipelineAsyncCallbackInfo callbackInfo)
-// {
-// }
+static void onCreateComputePipelineDone(void* result_untyped, void* userdata) {
+    wasi_webgpu_webgpu_result_own_gpu_compute_pipeline_create_pipeline_error_t* result = result_untyped;
+    WGPUCreateComputePipelineAsyncCallbackInfo cb = *(WGPUCreateComputePipelineAsyncCallbackInfo*)userdata;
+    if (result->is_err) {
+        wasi_webgpu_webgpu_create_pipeline_error_t err = result->val.err;
+        WGPUCreatePipelineAsyncStatus status;
+        switch (err.kind.tag) {
+        case WASI_WEBGPU_WEBGPU_CREATE_PIPELINE_ERROR_KIND_GPU_PIPELINE_ERROR:
+            switch (err.kind.val.gpu_pipeline_error) {
+            case WASI_WEBGPU_WEBGPU_GPU_PIPELINE_ERROR_REASON_VALIDATION:
+                status = WGPUCreatePipelineAsyncStatus_ValidationError;
+                break;
+            case WASI_WEBGPU_WEBGPU_GPU_PIPELINE_ERROR_REASON_INTERNAL:
+                status = WGPUCreatePipelineAsyncStatus_InternalError;
+                break;
+            default:
+                unreachable();
+            }
+            break;
+        default:
+            unreachable();
+        }
+        WGPUStringView message = stringWasiToNative(&err.message);
+        cb.callback(status, NULL, message, cb.userdata1, cb.userdata2);
+        free((void*)message.data);
+        wasi_webgpu_webgpu_create_pipeline_error_free(&err);
+        return;
+    }
+
+    cb.callback(
+        WGPUCreatePipelineAsyncStatus_Success,
+        computePipelineWasiToNative(result->val.ok),
+        WGPU_STRING_VIEW_INIT,
+        cb.userdata1,
+        cb.userdata2
+    );
+}
+
+static uint32_t callCreateComputePipelineAsync(void* args, void* result) {
+    return wasi_webgpu_webgpu_method_gpu_device_create_compute_pipeline_async(args, result);
+}
+
+static void freeCreateComputePipelineAsyncArgs(void* args_untyped) {
+    wasi_webgpu_webgpu_method_gpu_device_create_compute_pipeline_async_args_t* args = args_untyped;
+    wasi_webgpu_webgpu_gpu_compute_pipeline_descriptor_free(&args->descriptor);
+}
+
+WGPUFuture wgpuDeviceCreateComputePipelineAsync(
+    WGPUDevice device,
+    WGPUComputePipelineDescriptor const* descriptor,
+    WGPUCreateComputePipelineAsyncCallbackInfo callbackInfo
+) {
+    if (!device || !descriptor || !callbackInfo.callback) unreachable();
+    validateCallbackMode(callbackInfo.mode);
+
+    WGPUCreateComputePipelineAsyncCallbackInfo* cb = malloc(sizeof *cb);
+    if (!cb) oom();
+    *cb = callbackInfo;
+
+    wasi_webgpu_webgpu_method_gpu_device_create_compute_pipeline_async_args_t args = {
+        .self = wasi_webgpu_webgpu_borrow_gpu_device(device->device),
+        .descriptor = computePipelineDescriptorNativeToWasi(descriptor),
+    };
+    return (WGPUFuture){.id = async_call((async_call_desc){
+        .call = &callCreateComputePipelineAsync,
+        .args = &args,
+        .args_size = sizeof args,
+        .args_free = &freeCreateComputePipelineAsyncArgs,
+        .result_size = sizeof(wasi_webgpu_webgpu_result_own_gpu_compute_pipeline_create_pipeline_error_t),
+        .on_done = &onCreateComputePipelineDone,
+        .userdata = cb,
+        .tag = (uint32_t)callbackInfo.mode,
+    })};
+}
 
 WGPUPipelineLayout wgpuDeviceCreatePipelineLayout(WGPUDevice device,
     WGPUPipelineLayoutDescriptor const* descriptor) {
