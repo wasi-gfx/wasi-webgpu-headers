@@ -120,6 +120,10 @@ static WGPUBufferMapState bufferMapStateWasiToNative(wasi_webgpu_webgpu_gpu_buff
 static wasi_webgpu_webgpu_gpu_buffer_usage_t bufferUsageNativeToWasi(WGPUBufferUsage usage);
 static WGPUBufferUsage bufferUsageWasiToNative(wasi_webgpu_webgpu_gpu_buffer_usage_t wasi);
 static wasi_webgpu_webgpu_gpu_map_mode_t mapModeNativeToWasi(WGPUMapMode mode);
+static wasi_webgpu_webgpu_option_gpu_buffer_binding_layout_t bufferBindingLayoutNativeToWasi(WGPUBufferBindingLayout const* layout);
+static wasi_webgpu_webgpu_option_gpu_sampler_binding_layout_t samplerBindingLayoutNativeToWasi(WGPUSamplerBindingLayout const* layout);
+static wasi_webgpu_webgpu_option_gpu_texture_binding_layout_t textureBindingLayoutNativeToWasi(WGPUTextureBindingLayout const* layout);
+static wasi_webgpu_webgpu_option_gpu_storage_texture_binding_layout_t storageTextureBindingLayoutNativeToWasi(WGPUStorageTextureBindingLayout const* layout);
 
 // the zero a WGPU_*_CALLBACK_INFO_INIT leaves behind means the app never picked one.
 static void validateCallbackMode(WGPUCallbackMode mode) {
@@ -961,10 +965,51 @@ WGPUBindGroup wgpuDeviceCreateBindGroup(WGPUDevice device, WGPUBindGroupDescript
     return bind_group_struct;
 }
 
-// WGPUBindGroupLayout wgpuDeviceCreateBindGroupLayout(WGPUDevice device, WGPUBindGroupLayoutDescriptor const*
-// descriptor)
-// {
-// }
+WGPUBindGroupLayout wgpuDeviceCreateBindGroupLayout(WGPUDevice device, WGPUBindGroupLayoutDescriptor const* descriptor) {
+    if (!device || !descriptor) unreachable();
+    if (descriptor->entryCount > 0 && !descriptor->entries) unreachable();
+
+    wasi_webgpu_webgpu_list_gpu_bind_group_layout_entry_t entries_wasi = {
+        .ptr = malloc(descriptor->entryCount * sizeof(wasi_webgpu_webgpu_gpu_bind_group_layout_entry_t)),
+        .len = descriptor->entryCount,
+    };
+    if (descriptor->entryCount > 0 && !entries_wasi.ptr) oom();
+
+    for (size_t i = 0; i < descriptor->entryCount; i++) {
+        WGPUBindGroupLayoutEntry const* entry = &descriptor->entries[i];
+        // TODO: binding arrays
+        if (entry->bindingArraySize > 1) todo();
+
+        entries_wasi.ptr[i] = (wasi_webgpu_webgpu_gpu_bind_group_layout_entry_t){
+            .binding = entry->binding,
+            // WGPUShaderStage uses the same bits as gpu-shader-stage
+            .visibility = (wasi_webgpu_webgpu_gpu_shader_stage_t)entry->visibility,
+            .buffer = bufferBindingLayoutNativeToWasi(&entry->buffer),
+            .sampler = samplerBindingLayoutNativeToWasi(&entry->sampler),
+            .texture = textureBindingLayoutNativeToWasi(&entry->texture),
+            .storage_texture = storageTextureBindingLayoutNativeToWasi(&entry->storageTexture),
+        };
+    }
+
+    wasi_webgpu_webgpu_gpu_bind_group_layout_descriptor_t descriptor_wasi = {
+        .entries = entries_wasi,
+        .label = optionalStringNativeToWasi(&descriptor->label),
+    };
+
+    wasi_webgpu_webgpu_own_gpu_bind_group_layout_t bind_group_layout =
+        wasi_webgpu_webgpu_method_gpu_device_create_bind_group_layout(
+            wasi_webgpu_webgpu_borrow_gpu_device(device->device),
+            &descriptor_wasi
+        );
+
+    wasi_webgpu_webgpu_gpu_bind_group_layout_descriptor_free(&descriptor_wasi);
+
+    WGPUBindGroupLayoutImpl* bind_group_layout_struct = malloc(sizeof(WGPUBindGroupLayoutImpl));
+    if (!bind_group_layout_struct) oom();
+    bind_group_layout_struct->bind_group_layout = bind_group_layout;
+    bind_group_layout_struct->refCount = 1;
+    return bind_group_layout_struct;
+}
 
 WGPUBuffer wgpuDeviceCreateBuffer(WGPUDevice device, WGPUBufferDescriptor const* descriptor) {
     if (!device) unreachable();
@@ -2764,4 +2809,72 @@ static void limitsWasiToNative(wasi_webgpu_webgpu_own_gpu_supported_limits_t was
     limits->maxComputeWorkgroupSizeZ = wasi_webgpu_webgpu_method_gpu_supported_limits_max_compute_workgroup_size_z(wasi_limits_borrow);
     limits->maxComputeWorkgroupsPerDimension = wasi_webgpu_webgpu_method_gpu_supported_limits_max_compute_workgroups_per_dimension(wasi_limits_borrow);
     limits->maxImmediateSize = wasi_webgpu_webgpu_method_gpu_supported_limits_max_immediate_size(wasi_limits_borrow);
+}
+
+static wasi_webgpu_webgpu_option_gpu_buffer_binding_layout_t bufferBindingLayoutNativeToWasi(WGPUBufferBindingLayout const* layout) {
+    wasi_webgpu_webgpu_option_gpu_buffer_binding_layout_t wasi = {};
+    if (layout->type == WGPUBufferBindingType_BindingNotUsed) return wasi;
+
+    wasi.is_some = true;
+    wasi.val.type.is_some = layout->type != WGPUBufferBindingType_Undefined;
+    switch (layout->type) {
+    case WGPUBufferBindingType_Undefined:
+        break;
+    case WGPUBufferBindingType_Uniform:
+        wasi.val.type.val = WASI_WEBGPU_WEBGPU_GPU_BUFFER_BINDING_TYPE_UNIFORM;
+        break;
+    case WGPUBufferBindingType_Storage:
+        wasi.val.type.val = WASI_WEBGPU_WEBGPU_GPU_BUFFER_BINDING_TYPE_STORAGE;
+        break;
+    case WGPUBufferBindingType_ReadOnlyStorage:
+        wasi.val.type.val = WASI_WEBGPU_WEBGPU_GPU_BUFFER_BINDING_TYPE_READ_ONLY_STORAGE;
+        break;
+    default:
+        unreachable();
+    }
+    wasi.val.has_dynamic_offset = (imports_option_bool_t){
+        .is_some = true,
+        .val = layout->hasDynamicOffset
+    };
+    wasi.val.min_binding_size = (wasi_webgpu_webgpu_option_gpu_size64_t){
+        .is_some = layout->minBindingSize != 0,
+        .val = layout->minBindingSize,
+    };
+    return wasi;
+}
+
+static wasi_webgpu_webgpu_option_gpu_sampler_binding_layout_t samplerBindingLayoutNativeToWasi(WGPUSamplerBindingLayout const* layout) {
+    wasi_webgpu_webgpu_option_gpu_sampler_binding_layout_t wasi = {};
+    if (layout->type == WGPUSamplerBindingType_BindingNotUsed) return wasi;
+
+    wasi.is_some = true;
+    wasi.val.type.is_some = layout->type != WGPUSamplerBindingType_Undefined;
+    switch (layout->type) {
+    case WGPUSamplerBindingType_Undefined:
+        break;
+    case WGPUSamplerBindingType_Filtering:
+        wasi.val.type.val = WASI_WEBGPU_WEBGPU_GPU_SAMPLER_BINDING_TYPE_FILTERING;
+        break;
+    case WGPUSamplerBindingType_NonFiltering:
+        wasi.val.type.val = WASI_WEBGPU_WEBGPU_GPU_SAMPLER_BINDING_TYPE_NON_FILTERING;
+        break;
+    case WGPUSamplerBindingType_Comparison:
+        wasi.val.type.val = WASI_WEBGPU_WEBGPU_GPU_SAMPLER_BINDING_TYPE_COMPARISON;
+        break;
+    default:
+        unreachable();
+    }
+    return wasi;
+}
+
+static wasi_webgpu_webgpu_option_gpu_texture_binding_layout_t textureBindingLayoutNativeToWasi(WGPUTextureBindingLayout const* layout) {
+    wasi_webgpu_webgpu_option_gpu_texture_binding_layout_t wasi = {};
+    if (layout->sampleType == WGPUTextureSampleType_BindingNotUsed) return wasi;
+    todo();
+}
+
+static wasi_webgpu_webgpu_option_gpu_storage_texture_binding_layout_t storageTextureBindingLayoutNativeToWasi(WGPUStorageTextureBindingLayout const* layout) {
+    wasi_webgpu_webgpu_option_gpu_storage_texture_binding_layout_t wasi = {};
+    if (layout->access == WGPUStorageTextureAccess_BindingNotUsed) return wasi;
+    todo();
 }
