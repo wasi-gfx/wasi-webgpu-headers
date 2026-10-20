@@ -922,7 +922,7 @@ WGPUBindGroup wgpuDeviceCreateBindGroup(WGPUDevice device, WGPUBindGroupDescript
                         .val = descriptor->entries[i].offset,
                     },
                 .size = (wasi_webgpu_webgpu_option_gpu_size64_t){
-                    .is_some = true,
+                    .is_some = descriptor->entries[i].size != WGPU_WHOLE_SIZE,
                     .val = descriptor->entries[i].size,
                 },
             };
